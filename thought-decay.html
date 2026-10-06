@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thought Decay</title>
+<meta name="description" content="Type a stressor, watch it dissolve into particles, and grow a tree. A small browser ritual for letting go.">
+<meta name="theme-color" content="#0f141d">
+<meta property="og:title" content="Thought Decay">
+<meta property="og:description" content="Type a stressor, watch it dissolve into particles, and grow a tree.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Thought Decay">
+<meta name="twitter:description" content="Type a stressor, watch it dissolve into particles, and grow a tree.">
+<style>
+:root{--bg:#0f141d;--ink:#dbe4f0;--mute:#9aa7bc;--mint:127,224,184;--line:rgba(160,185,220,.14);
+ color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:radial-gradient(60% 45% at 50% -8%,rgba(70,110,170,.24),transparent 70%),
+ radial-gradient(70% 40% at 50% 108%,rgba(60,160,130,.14),transparent 70%),var(--bg);
+ color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;-webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+.ui{position:relative;z-index:1;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;
+ padding:clamp(24px,7vh,80px) 20px 0;text-align:center}
+h1{margin:0;font-weight:300;font-size:clamp(30px,6vw,46px);letter-spacing:.12em;text-shadow:0 0 32px rgba(var(--mint),.25)}
+.sub{margin:12px 0 0;color:var(--mute);font-size:clamp(15px,2.4vw,17px);font-style:italic;letter-spacing:.02em}
+.slot{display:grid;width:min(560px,100%);margin-top:clamp(22px,4.5vh,40px)}
+.slot>*{grid-area:1/1}
+textarea{display:block;width:100%;box-sizing:border-box;height:clamp(120px,21vh,170px);padding:16px 18px;resize:none;
+ background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;color:var(--ink);
+ font:300 18px/1.6 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;outline:none;
+ transition:border-color .4s,box-shadow .4s,background .4s}
+textarea::placeholder{color:#7e8c9f}
+textarea:focus{border-color:rgba(var(--mint),.45);background:rgba(255,255,255,.06);
+ box-shadow:0 0 0 4px rgba(var(--mint),.07),0 0 44px rgba(var(--mint),.14)}
+button{font:inherit;cursor:pointer;margin-top:18px;padding:12px 30px;border-radius:999px;color:#cdf5e6;letter-spacing:.08em;font-size:15px;
+ border:1px solid rgba(var(--mint),.4);background:linear-gradient(rgba(var(--mint),.16),rgba(var(--mint),.05));
+ transition:box-shadow .4s,opacity .4s,border-color .4s,transform .2s}
+button:hover:not(:disabled){box-shadow:0 0 28px rgba(var(--mint),.28);border-color:rgba(var(--mint),.7)}
+button:active:not(:disabled){transform:scale(.98)}
+button:focus-visible{outline:2px solid rgba(var(--mint),.8);outline-offset:3px}
+button:disabled{opacity:.35;cursor:default}
+.card{transition:opacity .9s ease,transform .9s ease;position:relative}
+.card.gone{opacity:0;transform:translateY(14px);pointer-events:none}
+.card.gone textarea{color:transparent;caret-color:transparent}
+.card.gone .count{opacity:0}
+.after{opacity:0;pointer-events:none;transition:opacity 1.2s ease;display:flex;flex-direction:column;align-items:center;padding-top:6px}
+.after.show{opacity:1;pointer-events:auto}
+.status{margin:0;color:var(--mute);font-style:italic;font-size:16px;min-height:1.6em}
+.after button{margin-top:16px;opacity:0;transition:opacity 1.4s ease .5s,box-shadow .4s}
+.after.ready button{opacity:1}
+.seeds{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.seed{margin:0;padding:7px 14px;font-size:13px;letter-spacing:.04em;color:var(--mute);background:rgba(255,255,255,.03);border:1px solid var(--line);display:inline-flex;align-items:center;gap:8px}
+.seed i{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);opacity:.6}
+.seed[aria-checked=true]{color:var(--ink);border-color:rgba(var(--mint),.5);background:rgba(var(--mint),.08)}
+.seed[aria-checked=true] i{opacity:1}
+/* character counter — sits in the textarea's own top-right padding, fades in only once you type */
+.count{position:absolute;top:10px;right:14px;font-size:11px;letter-spacing:.06em;color:#7e8c9f;
+ font-style:normal;opacity:0;transition:opacity .35s ease,color .35s ease;pointer-events:none}
+.count.on{opacity:.7}
+.count.near{color:#e8b86a;opacity:.95}
+/* back button — top-left, mirrors the mute button's footprint */
+.back{position:fixed;z-index:2;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;margin:0;
+ width:38px;height:38px;padding:0;display:grid;place-items:center;border-radius:999px;
+ color:var(--mute);text-decoration:none;border:1px solid var(--line);
+ background:rgba(255,255,255,.04);backdrop-filter:blur(6px);
+ transition:color .3s,border-color .3s,background .3s}
+.back:hover{color:var(--ink);border-color:rgba(var(--mint),.5);background:rgba(var(--mint),.08)}
+.mute{position:fixed;z-index:2;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;margin:0;width:38px;height:38px;padding:0;display:grid;place-items:center;color:var(--mute);background:rgba(255,255,255,.04);border-color:var(--line)}
+.mute .x{display:none}.mute.off .w{display:none}.mute.off .x{display:inline}
+.forest{position:fixed;z-index:1;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);margin:0;font-size:12px;color:#7e8c9f;font-style:italic;pointer-events:none;max-width:calc(100% - 190px);text-align:left}
+/* reset — subtle until hovered, mirrors the mute button's footprint but flat */
+.reset{position:fixed;z-index:2;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);margin:0;padding:7px 14px;
+ min-width:104px;text-align:center;font-size:12px;letter-spacing:.06em;color:#7e8c9f;background:rgba(255,255,255,.03);
+ border:1px solid var(--line);border-radius:999px;transition:color .3s,border-color .3s,background .3s,box-shadow .3s}
+.reset:hover:not(:disabled),.reset.armed{color:#ffb4b4;border-color:rgba(255,120,120,.5);background:rgba(255,120,120,.08);box-shadow:0 0 18px rgba(255,120,120,.15)}
+.reset.armed{border-color:rgba(255,120,120,.75);background:rgba(255,120,120,.14)}
+.reset:focus-visible{outline-color:rgba(255,140,140,.8)}
+/* reset confirmation toast */
+.toast{position:fixed;z-index:3;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);margin:0;padding:8px 18px;
+ font-size:12px;letter-spacing:.06em;color:#cdf5e6;background:rgba(18,26,36,.94);border:1px solid rgba(var(--mint),.3);
+ border-radius:999px;opacity:0;transform:translateX(-50%) translateY(8px);pointer-events:none;
+ transition:opacity .5s ease,transform .5s ease}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.card{transition:opacity .8s ease .35s,transform .8s ease .35s,filter .8s ease .35s}
+.card.gone{transform:translateY(12px) scale(.985);filter:blur(3px);transition:opacity .7s ease,transform .7s ease,filter .7s ease}
+.after{transition:opacity .45s ease}
+.after.show{transition:opacity 1.1s ease .7s}
+.breath{width:92px;height:92px;border-radius:50%;margin-top:2px;border:1px solid rgba(var(--mint),.55);
+ background:radial-gradient(circle at 50% 40%,rgba(var(--mint),.28),rgba(var(--mint),.04) 70%);
+ box-shadow:0 0 30px rgba(var(--mint),.2);will-change:transform}
+.bl{margin:12px 0 10px;min-height:1.4em;font-size:15px;letter-spacing:.14em;color:#b9ead6}
+.after .ghost{margin-top:8px;padding:6px 14px;font-size:13px;background:none;border-color:transparent;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+<button id="mute" class="mute" aria-label="Mute sound" aria-pressed="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path class="w" d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/><path class="x" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+<button id="reset" class="reset" aria-label="Reset forest">Reset forest</button>
+<p class="forest" id="forest"></p>
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+<main class="ui">
+  <h1>Thought Decay</h1>
+  <p class="sub">Type your stressor, then let it dissolve.</p>
+  <div class="slot">
+    <section class="card" id="card">
+      <textarea id="thought" maxlength="280" placeholder="What is weighing on you?" aria-label="Your stressor"></textarea>
+      <span class="count" id="count" aria-hidden="true"></span>
+      <div class="seeds" role="radiogroup" aria-label="Choose a seed">
+        <button class="seed" type="button" role="radio" aria-checked="true"><i style="--c:#f7a6c3"></i>Sakura</button>
+        <button class="seed" type="button" role="radio" aria-checked="false"><i style="--c:#6fb55a"></i>Ancient Oak</button>
+        <button class="seed" type="button" role="radio" aria-checked="false"><i style="--c:#7ff5e0"></i>Crystal Fern</button>
+      </div>
+      <button id="release" disabled>Release &amp; Decay</button>
+    </section>
+    <div class="after" id="after" inert>
+      <div class="breath" id="breath" aria-hidden="true"></div>
+      <p class="bl" id="bl"></p>
+      <p class="status" id="status" aria-live="polite"></p>
+      <button id="again">Release Another Thought</button>
+      <button id="shot" class="ghost">Save Forest Snapshot</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cv = $('#c'); let ctx = cv.getContext('2d');
+  const ta = $('#thought'), btn = $('#release'), card = $('#card'),
+        after = $('#after'), status = $('#status'), again = $('#again'), flora = $('#forest'), muteB = $('#mute'),
+        resetB = $('#reset'), seedB = [...document.querySelectorAll('.seed')], breath = $('#breath'), bl = $('#bl'),
+        shotB = $('#shot'), cnt = $('#count'), toastEl = $('#toast');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+
+  /* ---------- canvas sizing ----------
+     H tracks the *visual* viewport when available, so on mobile the ground line rises above the
+     on-screen keyboard instead of hiding behind it. Small deltas are ignored to avoid thrashing
+     the snapshot cache while the keyboard animates open or closed. */
+  let W = 0, H = 0, dpr = 1, bx = 0, by = 0, L = 60, gen = 0, lastW = 0, lastH = 0;
+  function resize(force) {
+    const vv = window.visualViewport;
+    const w = innerWidth, h = Math.round((vv && vv.height) || innerHeight);
+    if (!force && Math.abs(w - lastW) < 4 && Math.abs(h - lastH) < 8) return;
+    lastW = w; lastH = h; W = w; H = h;
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    bx = W / 2; by = H - 46;
+    L = Math.min(H * .1, W * .17, 90); gen++;          // trunk length
+  }
+  addEventListener('resize', () => resize(true));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => resize(false));
+  resize(true);
+
+  /* ---------- sprites, pre-rendered once on hidden canvases ---------- */
+  const mkc = (w, h = w) => { const o = document.createElement('canvas'); o.width = w; o.height = h; return [o, o.getContext('2d')]; };
+  const glow = (r, g, b) => {
+    const [o, c] = mkc(64), q = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+    q.addColorStop(0, `rgba(${r},${g},${b},1)`); q.addColorStop(.25, `rgba(${r},${g},${b},.55)`); q.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    c.fillStyle = q; c.fillRect(0, 0, 64, 64); return o;
+  };
+  const GL = { warm: glow(255, 225, 150), cyan: glow(140, 255, 235) };
+  const leafPath = (c, l, w) => { c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(w, -l * .3, w * .8, -l * .8, 0, -l); c.bezierCurveTo(-w * .8, -l * .8, -w, -l * .3, 0, 0); c.closePath(); };
+  const shardPath = (c, l, w) => { c.beginPath(); c.moveTo(0, 0); c.lineTo(w, -l * .35); c.lineTo(0, -l); c.lineTo(-w, -l * .35); c.closePath(); };
+  function foliage(dark, light, crystal) {            // layered fan of five leaves or shards
+    const [o, c] = mkc(64); c.translate(32, 58);
+    [-.95, .95, -.5, .5, 0].forEach((a, i) => {
+      c.save(); c.rotate(a); const l = 42 - (i % 2) * 5, g = c.createLinearGradient(0, 0, 0, -l);
+      g.addColorStop(0, dark); g.addColorStop(1, light); c.fillStyle = g; c.globalAlpha = .93;
+      (crystal ? shardPath : leafPath)(c, l, crystal ? 7 : 11); c.fill();
+      c.strokeStyle = crystal ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.22)'; c.lineWidth = .8; c.stroke();
+      if (!crystal) { c.beginPath(); c.moveTo(0, -2); c.lineTo(0, -l * .8); c.stroke(); }
+      c.restore();
+    });
+    return o;
+  }
+  function sakura() {                                  // two layers of five notched petals, stamens, heart
+    const [o, c] = mkc(96); c.translate(48, 48);
+    for (let y = 0; y < 2; y++) for (let i = 0; i < 5; i++) {
+      const z = y ? 15 : 22; c.save(); c.rotate((y ? Math.PI / 5 : 0) + i * Math.PI * 2 / 5);
+      const g = c.createRadialGradient(0, -z * .3, 1, 0, -z * .7, z * 1.2);
+      g.addColorStop(0, y ? '#fff4f8' : '#ffdfeb'); g.addColorStop(.7, y ? '#ffc6da' : '#f7a6c3'); g.addColorStop(1, '#e97ea3');
+      c.fillStyle = g; c.beginPath(); c.moveTo(0, 0);
+      c.bezierCurveTo(-z * .95, -z * .3, -z * .8, -z * 1.2, -z * .18, -z * 1.05); c.lineTo(0, -z * .86); c.lineTo(z * .18, -z * 1.05);
+      c.bezierCurveTo(z * .8, -z * 1.2, z * .95, -z * .3, 0, 0); c.fill();
+      c.strokeStyle = 'rgba(190,70,110,.35)'; c.lineWidth = .7; c.stroke(); c.restore();
+    }
+    c.strokeStyle = '#e0678f'; c.fillStyle = '#ffe08a'; c.lineWidth = .8;
+    for (let i = 0; i < 8; i++) { const x = Math.cos(i * .785) * 8, y = Math.sin(i * .785) * 8;
+      c.beginPath(); c.moveTo(0, 0); c.lineTo(x, y); c.stroke(); c.beginPath(); c.arc(x, y, 1.4, 0, 6.3); c.fill(); }
+    c.fillStyle = '#d9507f'; c.beginPath(); c.arc(0, 0, 2.2, 0, 6.3); c.fill(); return o;
+  }
+  function crystalBloom() {                            // faceted star with a soft halo
+    const [o, c] = mkc(96); c.translate(48, 48);
+    const h = c.createRadialGradient(0, 0, 0, 0, 0, 46); h.addColorStop(0, 'rgba(150,255,240,.55)'); h.addColorStop(1, 'rgba(150,255,240,0)');
+    c.fillStyle = h; c.fillRect(-48, -48, 96, 96);
+    for (let i = 0; i < 8; i++) {
+      c.save(); c.rotate(i * Math.PI / 4); const l = i % 2 ? 24 : 38, g = c.createLinearGradient(0, 0, 0, -l);
+      g.addColorStop(0, '#6ff5e0'); g.addColorStop(1, '#ffffff'); c.fillStyle = g; shardPath(c, l, 6); c.fill();
+      c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = .7; c.stroke(); c.restore();
+    }
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 3, 0, 6.3); c.fill(); return o;
+  }
+  function oakBloom() {                                // fresh pale-gold growth with catkin buds
+    const [o, c] = mkc(96); c.translate(48, 48);
+    for (let i = 0; i < 6; i++) {
+      c.save(); c.rotate(i * Math.PI / 3); const g = c.createLinearGradient(0, 0, 0, -34);
+      g.addColorStop(0, '#6fb55a'); g.addColorStop(1, '#d9f08a'); c.fillStyle = g; leafPath(c, 34, 10); c.fill(); c.restore();
+    }
+    c.fillStyle = '#f3d36b';
+    for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(Math.cos(i * 1.26) * 6, Math.sin(i * 1.26) * 6, 2.4, 0, 6.3); c.fill(); }
+    return o;
+  }
+  function petalSprite(kind) {
+    const [o, c] = mkc(32); c.translate(16, 28);
+    if (kind === 0) { c.fillStyle = '#ffc6da'; c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(-14, -6, -12, -24, -2, -24); c.lineTo(0, -21); c.lineTo(2, -24); c.bezierCurveTo(12, -24, 14, -6, 0, 0); c.fill(); }
+    else if (kind === 1) { c.fillStyle = '#9ccf63'; leafPath(c, 26, 8); c.fill(); }
+    else { c.fillStyle = '#9cfbee'; shardPath(c, 26, 6); c.fill(); }
+    return o;
+  }
+  const SPECIES = [
+    { w: 1, spread: [.3, .52], bend: .35, third: .25, ratio: [.7, .84], dense: false, lm: .8, fly: 'warm', aura: [255, 170, 205],
+      bark: d => `hsl(${20 + d * 2} 24% ${31 + d * 2.6}%)`, leaf: [foliage('#3f7a52', '#a5dba0'), foliage('#4e8f5d', '#c4efae')], bloom: sakura(), petal: petalSprite(0) },
+    { w: 1.5, spread: [.35, .6], bend: .45, third: .45, ratio: [.72, .86], dense: true, lm: 1.15, fly: 'warm', aura: [150, 235, 160],
+      bark: d => `hsl(${30 + d * 3} 30% ${27 + d * 2.4}%)`, leaf: [foliage('#1f5a36', '#6fc070'), foliage('#2c6f3c', '#9be07c')], bloom: oakBloom(), petal: petalSprite(1) },
+    { w: .75, spread: [.5, .5], bend: 0, third: 0, ratio: [.74, .74], dense: false, lm: .85, fly: 'cyan', aura: [120, 255, 235],
+      bark: d => `hsl(${175 + d * 2} 80% ${52 + d * 2.5}%)`, leaf: [foliage('#0e7f9a', '#8ffff0', 1), foliage('#18a6b5', '#d5fffa', 1)], bloom: crystalBloom(), petal: petalSprite(2) }
+  ];
+
+  /* ---------- procedural trees (seeded per species + seed id) ---------- */
+  const MAXD = 8, GMAX = 10;
+  const rng = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const trees = new Map();
+  function treeOf(s, k) {
+    const key = s + ':' + k; if (trees.has(key)) return trees.get(key);
+    const P = SPECIES[s], R = rng(k * 7 + s * 131 + 5), rg = ([a, b]) => a + R() * (b - a);
+    const mk = (d, a) => {
+      const n = { d, a, l: rg(P.ratio), bend: (R() - .5) * P.bend * .5, ph: R() * 6.28, k: [], ls: .7 + R() * .6, bloom: d === MAXD && R() < .45 };
+      if (d < MAXD) {
+        if (d === 0) n.k.push(mk(1, (R() - .5) * .12));
+        else {
+          const sp = rg(P.spread), j = () => P.bend ? .6 + R() * .6 : 1;
+          n.k.push(mk(d + 1, -sp * j()), mk(d + 1, sp * j()));
+          if (d >= 2 && d < 6 && R() < P.third) n.k.push(mk(d + 1, (R() - .5) * .3));
+        }
+      }
+      return n;
+    };
+    const t = mk(0, 0); trees.set(key, t); return t;
+  }
+
+  /* ---------- tree rasteriser ----------
+     Each branch is a tapered ribbon whose centreline is sampled from the branch's quadratic curve.
+     The linear gradient runs along the true chord (base → tip), and a solid rounded tip filled with
+     the exact end colour closes the limb.
+
+     Two passes keep the joints clean:
+       pass 0  — every limb's drop shadow, drawn first, so a branch's shadow can never land on the
+                 bark of its own parent (that was the dark smear along the crotch of each fork).
+       pass 1  — all bark, on top of every shadow.
+     Junction rings are tinted from the local bark hue rather than near-black, so the fork reads as
+     the same wood instead of a dark stroke. */
+  function drawTree(c, s, k, Gv, ox, oy, t, sw, out, bs) {
+    const P = SPECIES[s], u = L / 80, lf = [], bm = [], wd = d => Math.max(.7, L * .13 * P.w * Math.pow(.72, d));
+    /* One continuous bark ramp for the whole tree: bc[d][1] (a limb's tip tone) is literally the same
+       string as bc[d+1][0] (its children's base tone), so no seam can ever appear at a joint. */
+    const barkCol = (x, al, lum = 0) => {
+      const m = P.bark(x).match(/[\d.]+/g).map(Number), r = clamp(x / (MAXD + 1));
+      return `hsl(${m[0]} ${Math.min(100, m[1] + 30 * r)}% ${clamp(m[2] + 20 * r + lum, 0, 100)}% / ${al})`;
+    };
+    const bc = P.bc || (P.bc = Array.from({ length: MAXD + 1 }, (_, d) => [barkCol(d, 1), barkCol(d + 1, 1)]));
+
+    const walk = (n, x, y, ang, pl, pass) => {
+      const f = clamp(Gv - n.d * .85); if (f <= 0) return;
+      const e = f * f * (3 - 2 * f), len = n.d ? pl * n.l : L, dl = Math.atan(2 * n.bend);
+      const a = ang + n.a - dl + (sw ? Math.sin(t * .0007 + n.ph) * .022 * (.5 + n.d * .18) * (.7 + .3 * sw) + Math.sin(t * .0005) * .0025 * n.d * sw : 0);
+      const ea = a - dl;
+      const dx = Math.sin(a), dy = -Math.cos(a), x2 = x + dx * len * e, y2 = y + dy * len * e, q = n.bend * len * e;
+      const cx = (x + x2) / 2 - dy * q, cy = (y + y2) / 2 + dx * q, px = -dy, py = dx;
+      const w0 = wd(n.d) * (n.d ? 1 : 1.3), wt = n.d < MAXD ? wd(n.d + 1) : w0 * .6;
+      const h0 = w0 / 2, h1 = (w0 + (wt - w0) * e) / 2;
+
+      if (pass === 0 && n.d > 4) return;               // only the proximal limbs cast a shadow
+
+      /* --- sample the quadratic centreline into a smooth polyline and derive a tapered ribbon --- */
+      const SEG = 4 + n.d;                             // more samples on thick proximal limbs
+      const cp = [];
+      let pnx = 0, pny = 1;
+      for (let i = 0; i <= SEG; i++) {
+        const q2 = i / SEG, m = 1 - q2;
+        const sxp = m * m * x + 2 * m * q2 * cx + q2 * q2 * x2;
+        const syp = m * m * y + 2 * m * q2 * cy + q2 * q2 * y2;
+        let tx = 2 * m * (cx - x) + 2 * q2 * (x2 - cx);
+        let ty = 2 * m * (cy - y) + 2 * q2 * (y2 - cy);
+        let tl = Math.hypot(tx, ty);
+        if (tl < 1e-4) { tx = pnx; ty = pny; tl = 1; }
+        const nx = -ty / tl, ny = tx / tl;
+        pnx = tx / tl; pny = ty / tl;
+        cp.push({ x: sxp, y: syp, nx, ny, h: h0 + (h1 - h0) * q2 });
+      }
+      const ribbon = (ox2, oy2) => {
+        c.beginPath();
+        c.moveTo(cp[0].x + cp[0].nx * cp[0].h + ox2, cp[0].y + cp[0].ny * cp[0].h + oy2);
+        for (let i = 1; i < cp.length; i++) c.lineTo(cp[i].x + cp[i].nx * cp[i].h + ox2, cp[i].y + cp[i].ny * cp[i].h + oy2);
+        for (let i = cp.length - 1; i >= 0; i--) c.lineTo(cp[i].x - cp[i].nx * cp[i].h + ox2, cp[i].y - cp[i].ny * cp[i].h + oy2);
+        c.closePath();
+      };
+
+      /* --- pass 0: shadows only --- */
+      if (pass === 0) {
+        ribbon(1.6 * u, 2.6 * u);
+        c.fillStyle = 'rgba(4,7,12,.22)';
+        c.fill();
+        for (const ch of n.k) walk(ch, x2, y2, ea, len, 0);
+        return;
+      }
+
+      /* --- pass 1: bark --- */
+      const g = c.createLinearGradient(x, y, x2, y2);
+      g.addColorStop(0, bc[n.d][0]);
+      g.addColorStop(1, bc[n.d][1]);
+      ribbon(0, 0);
+      c.fillStyle = g; c.fill();
+      if (s === 2) { c.strokeStyle = 'rgba(215,255,250,.45)'; c.lineWidth = .6; c.stroke(); }
+
+      /* --- rounded tip in the exact end colour: seamless, no radial falloff, no dark seam --- */
+      const tip = cp[cp.length - 1];
+      c.fillStyle = bc[n.d][1];
+      c.beginPath(); c.arc(tip.x, tip.y, tip.h, 0, 6.283); c.fill();
+
+      if (w0 > 2.4) {                            // inner highlight on the lit side, following the curve
+        c.strokeStyle = 'rgba(255,255,255,.13)'; c.lineWidth = Math.max(.5, w0 * .1);
+        c.beginPath();
+        c.moveTo(cp[0].x + cp[0].nx * cp[0].h * .5, cp[0].y + cp[0].ny * cp[0].h * .5);
+        for (let i = 1; i < cp.length; i++) c.lineTo(cp[i].x + cp[i].nx * cp[i].h * .5, cp[i].y + cp[i].ny * cp[i].h * .5);
+        c.stroke();
+      }
+      if (e > .9 && n.d >= 1 && n.d <= 4 && h1 > 1.1) {   // weathered growth rings, tinted from the local bark
+        const r = h1 * 1.1, rx = x2 - dx * len * e * .12, ry = y2 - dy * len * e * .12;
+        c.lineWidth = Math.max(.7, h1 * .22); c.strokeStyle = barkCol(n.d, .28, -9);
+        c.beginPath(); c.moveTo(rx - px * r, ry - py * r);
+        c.quadraticCurveTo(rx + dx * r * .7, ry + dy * r * .7, rx + px * r, ry + py * r); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.09)'; c.beginPath();
+        c.moveTo(rx - px * r - dx * r * .4, ry - py * r - dy * r * .4);
+        c.quadraticCurveTo(rx + dx * r * .3, ry + dy * r * .3, rx + px * r - dx * r * .4, ry + py * r - dy * r * .4); c.stroke();
+      }
+      const lp = clamp((Gv - (n.d * .85 + .7)) / 1.2), bp = clamp((Gv - 7.4) / 2.2);
+      if (n.d >= (P.dense ? 2 : 3) && lp > 0) {   // foliage fans out around the twig tip
+        const sz = (8 + 6 * n.ls) * u * P.lm * lp * (1 - n.d * .025), m = P.dense ? 3 : 2;
+        for (let j = 0; j < m; j++) lf.push(0, x2, y2, sz * (1 - j * .1), ea + (j - (m - 1) / 2) * .8 + Math.sin(n.ph * (j + 2)) * .25, n.ph + j);
+        if (P.dense && n.d >= 3) lf.push(0, (x + x2) / 2, (y + y2) / 2, sz * .85, ea + (n.ph > 3 ? 1.1 : -1.1), n.ph + 7);
+      }
+      if (n.bloom && bp > 0) {
+        for (let j = 0; j < (n.ph > 3 ? 2 : 1); j++)
+          bm.push(x2 + j * 6 * u * Math.cos(n.ph), y2 - j * 3 * u, (j ? 11 : 15) * u * bp * (.85 + .3 * n.ls / 1.3), n.ph * 3 + j * 1.3, n.ph + j);
+        if (out && bp > .9) out.push(x2, y2);
+      }
+      for (const ch of n.k) walk(ch, x2, y2, ea, len, 1);
+    };
+    const root = treeOf(s, k);
+    walk(root, ox, oy, 0, L, 0);                       // all shadows first …
+    walk(root, ox, oy, 0, L, 1);                       // … then every limb on top of them
+    const T = (x, y, r) => { const co = Math.cos(r) * bs, si = Math.sin(r) * bs; c.setTransform(co, si, -si, co, x * bs, y * bs); };
+    for (let i = 0; i < lf.length; i += 6) {
+      const z = lf[i + 3]; T(lf[i + 1], lf[i + 2], lf[i + 4]); c.globalAlpha = .96;
+      c.drawImage(P.leaf[lf[i + 5] > 3 ? 1 : 0], -z, -z * 1.81, z * 2, z * 2);
+    }
+    for (let i = 0; i < bm.length; i += 5) {
+      const z = bm[i + 2]; T(bm[i], bm[i + 1], bm[i + 3]); c.globalAlpha = s === 2 ? .75 + .25 * Math.sin(t * .003 + bm[i + 4] * 9) : 1;
+      c.drawImage(P.bloom, -z, -z, z * 2, z * 2);
+    }
+    c.setTransform(bs, 0, 0, bs, 0, 0); c.globalAlpha = 1;
+  }
+
+  /* ---------- forest state: numbers only, never any text ---------- */
+  const KEY = 'thought-decay:forest:v2', MKEY = 'thought-decay:muted', newK = () => (Math.random() * 1e6) | 0;
+  const MAX_FOREST = 24;                              // only the newest N are kept, saved or drawn
+  let plants = [0, 1, 2].map(() => ({ k: newK(), g: 0 })), forest = [], count = 0, sel = 0;   // one living tree per species
+  let restored = false;                                // did this session actually load a save?
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null'), ok = Number.isFinite;
+    if (d && Array.isArray(d.p)) {
+      d.p.slice(0, 3).forEach((p, i) => { if (p && ok(p.k) && ok(p.g)) plants[i] = { k: p.k, g: clamp(p.g, 0, GMAX) }; });
+      (d.done || []).forEach(f => { if (SPECIES[f.s] && ok(f.k)) forest.push({ s: f.s, k: f.k, g: GMAX }); });
+      count = ok(d.n) ? d.n : 0; sel = SPECIES[d.sel] ? d.sel : 0;
+      restored = count > 0 || forest.length > 0 || plants.some(p => p.g > .05);
+    } else {                                           // carry over a v1 save
+      const o = JSON.parse(localStorage.getItem('thought-decay:forest:v1') || 'null');
+      if (o && o.act && SPECIES[o.act.s] && ok(o.act.k) && ok(o.act.g)) {
+        plants[o.act.s] = { k: o.act.k, g: clamp(o.act.g, 0, GMAX) }; sel = o.act.s; count = ok(o.n) ? o.n : 0;
+        (o.done || []).forEach(f => { if (SPECIES[f.s] && ok(f.k) && f.g >= GMAX - .2) forest.push({ s: f.s, k: f.k, g: GMAX }); });
+        restored = true;
+      }
+    }
+    if (forest.length > MAX_FOREST) forest = forest.slice(-MAX_FOREST);
+  } catch (e) {}
+  let G = plants[sel].g, Gt = G, pulse = 0, auraV = 0;
+  function save() {
+    plants[sel].g = +Gt.toFixed(3);
+    try { localStorage.setItem(KEY, JSON.stringify({ n: count, sel, p: plants, done: forest.map(f => ({ s: f.s, k: f.k })) })); } catch (e) {}
+  }
+  const commit = () => { plants[sel].g = Math.min(GMAX, Gt); };       // write the live tree's growth back into its own slot
+  function settle(i) {                     // retire ONLY a fully grown tree; unfinished trees keep their growth and seed key
+    if (i === sel) commit();
+    const p = plants[i]; if (p.g < GMAX - 1e-3) return;
+    forest.push({ s: i, k: p.k, g: GMAX }); plants[i] = { k: newK(), g: 0 }; if (i === sel) G = Gt = 0;
+    /* A retired tree's cached snapshot is a full-resolution canvas (~3–15 MB). Without this the page
+       grows without bound over a long session, so drop anything past the newest MAX_FOREST along
+       with its snapshot and its generated branch geometry. */
+    while (forest.length > MAX_FOREST) {
+      const f = forest.shift();
+      trees.delete(f.s + ':' + f.k);
+      f.img = null;
+    }
+  }
+  function snap(f) {                       // cached hi-res image of a finished tree, rebuilt after a resize
+    const q = Math.min(2, dpr), cw = Math.ceil(L * 6), ch = Math.ceil(L * 4.6), [o, c] = mkc(cw * q, ch * q);
+    c.setTransform(q, 0, 0, q, 0, 0); drawTree(c, f.s, f.k, f.g, cw / 2, ch - 6, 0, false, null, q);
+    f.img = o; f.gen = gen; f.cw = cw; f.ch = ch;
+  }
+
+  /* ---------- Web Audio: synthesized chime + growth hum ---------- */
+  let AC = null, master, echo, hum = null, ar = 0, ab = 0, muted = false;
+  let impactVoices = 0;
+  const MAX_IMPACT_VOICES = 8;             // hard cap on simultaneous impact oscillators
+  try { muted = localStorage.getItem(MKEY) === '1'; } catch (e) {}
+
+  function ensureAudio() {
+    if (!AC) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch (e) { return false; }
+      master = AC.createGain(); master.gain.value = muted ? 0 : .7; master.connect(AC.destination);
+      echo = AC.createDelay(); echo.delayTime.value = .27; const fb = AC.createGain(), wet = AC.createGain(); fb.gain.value = .32; wet.gain.value = .4;
+      echo.connect(fb); fb.connect(echo); echo.connect(wet); wet.connect(master);
+    }
+    if (AC.state !== 'running') { const p = AC.resume(); if (p && p.catch) p.catch(() => {}); }
+    return true;
+  }
+  const audio = ensureAudio;               // kept name for existing call sites
+  // Mobile user-gesture unlock: resume/create the context on the first interaction of any kind.
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+    addEventListener(ev, () => { if (AC) ensureAudio(); }, { passive: true }));
+
+  function pluck(f, t, v) {
+    const g = AC.createGain(), g2 = AC.createGain(), o = AC.createOscillator(), o2 = AC.createOscillator();
+    o.type = 'triangle'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2; g2.gain.value = .25;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + 2.6);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master); g.connect(echo);
+    o.start(t); o2.start(t); o.stop(t + 2.7); o2.stop(t + 2.7);
+  }
+  const chime = () => [329.63, 415.30, 493.88, 659.25].forEach((f, i) => pluck(f, AC.currentTime + .02 + i * .11, .16 - i * .02));  // E4 G#4 B4 E5
+  function startHum() {
+    const t = AC.currentTime, g = AC.createGain(), f = AC.createBiquadFilter(), o1 = AC.createOscillator(), o2 = AC.createOscillator();
+    g.gain.value = 0; f.type = 'lowpass'; f.frequency.value = 300; f.Q.value = .7; o1.frequency.value = o2.frequency.value = 98; o2.detune.value = 7;
+    o1.connect(f); o2.connect(f); f.connect(g); g.connect(master);
+    const nb = AC.createBuffer(1, AC.sampleRate, AC.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const ns = AC.createBufferSource(), bp = AC.createBiquadFilter(), rg = AC.createGain();
+    ns.buffer = nb; ns.loop = true; bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = .9; rg.gain.value = 0;
+    ns.connect(bp); bp.connect(rg); rg.connect(master); o1.start(t); o2.start(t); ns.start(t);
+    hum = { g, f, o1, o2, rg, bp, ns };
+  }
+  function tickHum(dt) {                   // hum swells with the rate of particle absorption and rises as the tree grows
+    ar += (Math.min(1, ab / dt / 10) - ar) * .08; ab = 0;
+    if (!hum) return; const t = AC.currentTime, k = clamp(G / GMAX), b = 98 * (1 + k * .5);
+    hum.g.gain.setTargetAtTime(.02 + .07 * ar, t, .15); hum.f.frequency.setTargetAtTime(260 + ar * 520 + k * 200, t, .15);
+    hum.o1.frequency.setTargetAtTime(b + ar * 26, t, .25); hum.o2.frequency.setTargetAtTime(b * 1.5 + ar * 20, t, .25);
+    hum.rg.gain.setTargetAtTime(.004 + .03 * ar, t, .15); hum.bp.frequency.setTargetAtTime(1500 + ar * 2500, t, .2);
+  }
+  function stopHum() {
+    if (!hum) return; const h = hum, t = AC.currentTime; hum = null;
+    h.g.gain.setTargetAtTime(0, t, .5); h.rg.gain.setTargetAtTime(0, t, .5);
+    setTimeout(() => { try { h.o1.stop(); h.o2.stop(); h.ns.stop(); } catch (e) {} }, 3000);
+  }
+
+  const PENT = [1318.5, 1480, 1661.2, 1975.5, 2217.5, 2637]; let lastImp = 0;
+  function playImpactSound() {             // soft crystal droplets as text dissolves into the roots
+    const now = performance.now();
+    if (!AC || muted || impactVoices >= MAX_IMPACT_VOICES || now - lastImp < 55 || Math.random() < .35) return;
+    lastImp = now;
+    const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.type = Math.random() < .5 ? 'sine' : 'triangle'; o.frequency.value = PENT[(Math.random() * PENT.length) | 0] * (Math.random() < .25 ? 2 : 1);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.02 + Math.random() * .025, t + .004);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .16 + Math.random() * .12);
+    o.connect(g); g.connect(echo);
+    if (AC.createStereoPanner) { const p = AC.createStereoPanner(); p.pan.value = Math.random() * 1.2 - .6; g.connect(p); p.connect(master); } else g.connect(master);
+    impactVoices++;
+    o.onended = () => { impactVoices = Math.max(0, impactVoices - 1); };
+    o.start(t); o.stop(t + .32);
+  }
+
+  /* ---------- ambient life: dust, fireflies, falling petals ---------- */
+  const rnd = (n, f) => Array.from({ length: n }, f);
+  const dust = rnd(28, () => ({ u: Math.random(), v: Math.random(), s: .4 + Math.random(), ph: Math.random() * 6.28, r: .6 + Math.random() * 1.4 }));
+  const flies = rnd(11, () => ({ u: Math.random(), v: Math.random() * .85, s: .5 + Math.random(), ph: Math.random() * 6.28, z: 7 + Math.random() * 6 }));
+  const petals = []; let nextPetal = 0;
+
+  function drawGround(t) {
+    const m = ctx.createRadialGradient(bx, by + 6, 0, bx, by + 6, L * 1.2);
+    m.addColorStop(0, '#222c3a'); m.addColorStop(1, 'rgba(26,35,48,0)');
+    ctx.fillStyle = m; ctx.beginPath(); ctx.ellipse(bx, by + 6, L * 1.2, 10, 0, 0, 6.283); ctx.fill();
+    if (G < .6) {                                     // the seed, waiting
+      const z = 9 + pulse * 40; ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - G / .6) * (.65 + .35 * Math.sin(t * .003));
+      ctx.drawImage(GL.warm, bx - z, by - 2 - z, z * 2, z * 2); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ---------- text -> particles ---------- */
+  let particles = [], phase = 'idle', perP = 0, t0 = 0;
+  const TINT = [[[255, 232, 241], [244, 143, 177]], [[255, 226, 140], [52, 200, 140]], [[216, 255, 250], [90, 240, 214]]];  // rose / gold-emerald / mint-cyan
+  const PALS = TINT.map(([a, b]) => Array.from({ length: 8 }, (_, i) => `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * i / 7)).join(',')})`));
+  let pal = PALS[0];
+
+  function sampleText() {
+    const cs = getComputedStyle(ta), fs = parseFloat(cs.fontSize), lh = parseFloat(cs.lineHeight) || fs * 1.6;
+    const pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight), pt = parseFloat(cs.paddingTop);
+    const w = ta.clientWidth, h = ta.clientHeight, mw = w - pl - pr;
+    const o = document.createElement('canvas'); o.width = w; o.height = h;
+    const c = o.getContext('2d', { willReadFrequently: true });
+    c.font = `${cs.fontWeight} ${fs}px ${cs.fontFamily}`; c.textBaseline = 'middle'; c.fillStyle = '#fff';
+    const lines = [];
+    const split = s => {                              // break words wider than the box
+      while (c.measureText(s).width > mw && s.length > 1) {
+        let i = s.length - 1; while (i > 1 && c.measureText(s.slice(0, i)).width > mw) i--;
+        lines.push(s.slice(0, i)); s = s.slice(i);
+      } return s;
+    };
+    for (const para of ta.value.split('\n')) {        // mimic the textarea's own word wrapping
+      let cur = '';
+      for (const word of para.split(' ')) {
+        const t = cur ? cur + ' ' + word : word;
+        if (c.measureText(t).width <= mw) cur = t;
+        else { if (cur) lines.push(cur); cur = split(word); }
+      }
+      lines.push(cur);
+    }
+    lines.forEach((ln, i) => c.fillText(ln, pl, pt + (i + .5) * lh - ta.scrollTop));
+    const d = c.getImageData(0, 0, w, h).data, pts = [];
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) if (d[(y * w + x) * 4 + 3] > 110) pts.push(x, y);
+    const max = W < 600 ? 1400 : 2400, keep = Math.min(1, max / (pts.length / 2));
+    const r = ta.getBoundingClientRect(), out = [];
+    for (let i = 0; i < pts.length; i += 2) {
+      if (Math.random() > keep) continue;
+      out.push({ x: r.left + ta.clientLeft + pts[i], y: r.top + ta.clientTop + pts[i + 1], vx: 0, vy: 0, a: 1,
+        s: 1.1 + Math.random() * 1.1, delay: pts[i] / w * .9 + Math.random() * .9, age: 0, go: false, seed: Math.random() * 6.28 });
+    }
+    return out;
+  }
+
+  function release() {
+    const text = ta.value.trim();
+    if (!text || phase !== 'idle') return;
+    phase = 'releasing'; settle(sel); pal = PALS[sel]; count++; syncFlora();
+    particles = sampleText();
+    perP = (.9 + .5 * Math.min(1, text.length / 200)) / Math.max(1, particles.length);
+    ta.disabled = btn.disabled = true;
+    card.classList.add('gone');
+    card.inert = true;                               // remove the decaying card from the tab order
+    after.inert = false;                             // un-inert BEFORE writing the live region,
+    status.textContent = 'Dissolving…';              // otherwise the polite announcement is suppressed
+    after.classList.remove('ready'); after.classList.add('show');
+    t0 = performance.now();
+    if (audio()) { chime(); startHum(); }
+  }
+
+  function absorb(i) {
+    Gt = Math.min(GMAX, Gt + perP); pulse = Math.min(1, pulse + .012); ab++; playImpactSound();
+    particles[i] = particles[particles.length - 1]; particles.pop();
+  }
+
+  function update(dt) {
+    const drag = Math.pow(.982, dt);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      if (!p.go) {                                    // hold the text shape, then shatter
+        p.delay -= dt / 60;
+        if (p.delay > 0) continue;
+        p.go = true; const a = Math.random() * 6.283, s = .6 + Math.random() * 2.4;
+        p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s - .8;
+      }
+      p.age += dt / 60;
+      const dx = bx - p.x, dy = by - 4 - p.y, d = Math.hypot(dx, dy) || 1, pull = Math.min(.09, .012 + p.age * .035);
+      p.vx += (dx / d * pull + Math.sin(p.age * 2.2 + p.seed) * .012) * dt;   // drift toward the roots
+      p.vy += (dy / d * pull + .014) * dt;                                    // plus a little gravity
+      p.vx *= drag; p.vy *= drag; p.x += p.vx * dt; p.y += p.vy * dt;
+      p.a = Math.min(1, d / 80) * Math.max(.3, 1 - p.age * .07);
+      if (d < 9 || p.age > 11) absorb(i);
+    }
+  }
+
+  /* ---------- prompts, forest caption, picker ---------- */
+  const PROMPTS = [
+    'What thought are you holding onto that no longer serves you?',
+    'Write out a frustration, then let it turn into something living.',
+    'What fear can you lay down right now?',
+    'Type the word or weight you need to let go of today.',
+    'What is taking up space in your mind that you could set down?'
+  ];
+  let lastP = -1;
+  function newPrompt() { let i; do i = (Math.random() * PROMPTS.length) | 0; while (i === lastP); lastP = i; ta.placeholder = PROMPTS[i]; }
+  function syncFlora() {
+    const n = forest.length + plants.filter((p, i) => (i === sel ? Gt : p.g) > .05).length;
+    flora.textContent = count ? `${count} thought${count > 1 ? 's' : ''} released · ${n} tree${n === 1 ? '' : 's'} in your forest` : '';
+  }
+  function pick(i, init) {                 // each species keeps its own growth and seed key; switching never wipes progress
+    if (!init) {
+      if (phase !== 'idle' || i === sel) return;
+      settle(sel);                         // saves the outgoing tree (retired only if it is in full bloom)
+      sel = i; G = Gt = plants[i].g;       // load the incoming tree BEFORE any further sync, so its growth is never overwritten
+      settle(i); save();
+    }
+    // Roving tabindex: only the checked radio is a tab stop, so Tab flows textarea → seed group → Release.
+    seedB.forEach((b, j) => {
+      const on = j === i;
+      b.setAttribute('aria-checked', on);
+      b.tabIndex = on ? 0 : -1;
+    });
+    syncFlora();
+  }
+
+  /* ---------- small UI helpers: character counter + toast ---------- */
+  function updCount() {
+    const n = ta.value.length, lim = ta.maxLength || 280;
+    cnt.textContent = n ? `${n} / ${lim}` : '';
+    cnt.classList.toggle('on', n > 0);
+    cnt.classList.toggle('near', n > lim * .85);
+  }
+  let toastT = 0;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
+  /* ---------- the scene (everything except text particles), reused for the PNG export ---------- */
+  function scene(ts, dt, live) {
+    const S = SPECIES[sel], rgb = S.aura.join(',');
+    ctx.globalCompositeOperation = 'lighter';           // aura, dust and fireflies
+    const ar2 = Math.max(W, H) * .36, ay = by - L * 1.6, ag = ctx.createRadialGradient(bx, ay, 0, bx, ay, ar2);
+    ag.addColorStop(0, `rgba(${rgb},${auraV})`); ag.addColorStop(1, `rgba(${rgb},0)`); ctx.fillStyle = ag; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgb(200,215,240)';
+    /* Reduced-motion: dust and fireflies hold still (fixed position, fixed brightness) instead of
+       drifting and twinkling. The scene still reads as alive, without the ambient motion. */
+    if (calm) {
+      ctx.globalAlpha = .16;
+      for (const d of dust) ctx.fillRect(d.u * W, d.v * H, d.r, d.r);
+      const fg = GL[S.fly]; ctx.globalAlpha = .5;
+      for (const f of flies) ctx.drawImage(fg, f.u * W - f.z, f.v * H - f.z, f.z * 2, f.z * 2);
+    } else {
+      for (const d of dust) {
+        ctx.globalAlpha = .1 + .12 * (.5 + .5 * Math.sin(ts * .001 * d.s + d.ph));
+        ctx.fillRect(((d.u * W + Math.sin(ts * .00021 * d.s + d.ph) * 50) % W + W) % W, d.v * H + Math.cos(ts * .00027 * d.s + d.ph) * 34, d.r, d.r);
+      }
+      const fg = GL[S.fly];
+      for (const f of flies) {
+        const x = f.u * W + Math.sin(ts * .00023 * f.s + f.ph) * 70 + Math.sin(ts * .0009 + f.ph) * 12, y = f.v * H + Math.cos(ts * .00031 * f.s + f.ph * 2) * 42;
+        const tw = Math.max(0, Math.sin(ts * .0016 * f.s + f.ph)); ctx.globalAlpha = .12 + .75 * tw * tw;
+        ctx.drawImage(fg, x - f.z, y - f.z, f.z * 2, f.z * 2);
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    drawGround(ts);
+
+    const n0 = Math.max(0, forest.length - 10);          // retired trees keep fixed slots, so nothing shifts or flickers
+    for (let j = n0; j < forest.length; j++) {
+      const f = forest[j], sl = j % 10, st = sl >> 1, x = bx + (sl % 2 ? 1 : -1) * (L * 2.7 + st * L * 1.7);
+      if (x < 24 || x > W - 24) continue;
+      if (f.gen !== gen || !f.img) snap(f);
+      const sc = .62 - st * .03; ctx.globalAlpha = .78;
+      ctx.drawImage(f.img, x - f.cw * sc / 2, by - 3 - (st % 2) * 4 - (f.ch - 6) * sc, f.cw * sc, f.ch * sc);
+    }
+    ctx.globalAlpha = 1;
+
+    const bm = []; if (G > .001) drawTree(ctx, sel, plants[sel].k, G, bx, by, ts, !calm && live ? windAmp : 0, bm, dpr);
+    if (live && bm.length && ts > nextPetal && petals.length < (calm ? 8 : 34)) {   // petals break away from mature blooms
+      const j = ((Math.random() * bm.length / 2) | 0) * 2;
+      petals.push({ x: bm[j], y: bm[j + 1], vy: .25 + Math.random() * .3, ph: Math.random() * 6.28, r: Math.random() * 6.28, vr: (Math.random() - .5) * .05, z: 6 + Math.random() * 4, a: 1 });
+      nextPetal = ts + (700 + Math.random() * 1500) / clamp((G - 7.6) / 1.5, .2, 1);
+    }
+    for (let i = petals.length - 1; i >= 0; i--) {
+      const p = petals[i]; p.x += (Math.sin(ts * .0015 + p.ph) * .6 + .15) * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+      if (p.y >= by) { p.y = by; p.vy = 0; p.vr = 0; p.a -= .012 * dt; if (p.a <= 0) { petals.splice(i, 1); continue; } }
+      ctx.save(); ctx.globalAlpha = p.a * .9; ctx.translate(p.x, p.y); ctx.rotate(p.r + Math.sin(ts * .002 + p.ph) * .5);
+      ctx.drawImage(S.petal, -p.z, -p.z, p.z * 2, p.z * 2); ctx.restore();
+    }
+  }
+
+  /* ---------- main loop ---------- */
+  let last = performance.now(), lastLab = '', windAmp = 1, wb = 0;
+  const ease = x => x * x * (3 - 2 * x);
+  function frame(ts) {
+    const dt = Math.min(3, (ts - last) / 16.667 || 1); last = ts;
+    G += (Gt - G) * (1 - Math.pow(.97, dt)); pulse *= Math.pow(.96, dt); tickHum(dt);
+    wb += ((after.classList.contains('show') ? 1 : 0) - wb) * .02 * dt;      // wind picks up while thoughts are absorbed and while you breathe
+    windAmp = 1 + 1.2 * ar + .5 * wb;
+    auraV += (.05 + .13 * clamp(G / GMAX) + .018 * Math.min(8, forest.length) + pulse * .25 - auraV) * (1 - Math.pow(.998, dt));  // slow brightening
+    ctx.clearRect(0, 0, W, H);
+    scene(ts, dt, true);
+
+    if (particles.length) {
+      update(dt);
+      for (const p of particles) {
+        ctx.globalAlpha = p.go ? p.a : .92;
+        ctx.fillStyle = pal[p.go ? Math.min(7, p.age * 2.4 | 0) : 0];
+        ctx.fillRect(p.x, p.y, p.s, p.s);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    if (after.classList.contains('show')) {              // 4-7-8 breathing guide: in 4, hold 7, out 8
+      const t = ((ts - t0) / 1000) % 19; let sc, lab;
+      if (t < 4) { sc = .55 + .45 * ease(t / 4); lab = 'Inhale ' + Math.ceil(4 - t); }
+      else if (t < 11) { sc = 1; lab = 'Hold ' + Math.ceil(11 - t); }
+      else { sc = 1 - .45 * ease((t - 11) / 8); lab = 'Exhale ' + Math.ceil(19 - t); }
+      /* Reduced-motion: the circle stays at its resting size and only the text cue advances, so the
+         4-7-8 guidance still works without a large pulsing shape. */
+      if (!calm) {
+        breath.style.transform = `scale(${sc.toFixed(3)})`;
+        breath.style.boxShadow = `0 0 ${(18 + sc * 36) | 0}px rgba(127,224,184,${(.12 + sc * .25).toFixed(2)})`;
+      }
+      if (lab !== lastLab) bl.textContent = lastLab = lab;
+    }
+
+    if (phase === 'releasing' && !particles.length && Gt - G < .02 && performance.now() - t0 > 600) {
+      phase = 'done'; stopHum(); save(); syncFlora();
+      status.textContent = Gt >= GMAX - .02 ? 'Full bloom. This tree joins your forest when you plant the next seed.' : 'Released. Something small is growing.';
+      after.classList.add('ready');
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- PNG export: scene only, no UI text, re-rendered at high resolution ---------- */
+  async function shot() {
+    const es = Math.min(3, 4096 / Math.max(W, H)), od = dpr, oc = ctx, [xo, xc] = mkc(Math.round(W * es), Math.round(H * es));
+    const glowBg = (cx, cy, rx, ry, col) => { xc.save(); xc.translate(cx, cy); xc.scale(rx, ry); const g = xc.createRadialGradient(0, 0, 0, 0, 0, 1);
+      g.addColorStop(0, col); g.addColorStop(.7, 'rgba(0,0,0,0)'); xc.fillStyle = g; xc.fillRect(-1, -1, 2, 2); xc.restore(); };
+    xc.setTransform(es, 0, 0, es, 0, 0); xc.fillStyle = '#0f141d'; xc.fillRect(0, 0, W, H);
+    glowBg(W / 2, -.08 * H, W * .6, H * .45, 'rgba(70,110,170,.24)'); glowBg(W / 2, 1.08 * H, W * .7, H * .4, 'rgba(60,160,130,.14)');
+    dpr = es; ctx = xc;
+    try { scene(performance.now(), 0, false); } finally { ctx = oc; dpr = od; }
+    xo.toBlob(async b => {
+      if (!b) return;
+      let dl = null; try { dl = window.claude && await window.claude.use('downloads'); } catch (e) {}
+      if (dl) { try { await dl.save({ filename: 'thought-decay-forest.png', data: b }); } catch (e) {} }
+      else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'thought-decay-forest.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+    }, 'image/png');
+  }
+
+  /* ---------- UI wiring ---------- */
+  ta.addEventListener('input', () => { btn.disabled = !ta.value.trim(); updCount(); });
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) release(); });
+  btn.addEventListener('click', release);
+  seedB.forEach((b, i) => {
+    b.addEventListener('click', () => pick(i));
+    b.addEventListener('keydown', e => {                 // arrow-key navigation for the radiogroup
+      let ni = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (i + 1) % seedB.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (i - 1 + seedB.length) % seedB.length;
+      if (ni >= 0) { e.preventDefault(); pick(ni); seedB[ni].focus(); }
+    });
+  });
+  shotB.addEventListener('click', shot);
+  again.addEventListener('click', () => {
+    if (phase !== 'done') return;
+    phase = 'idle'; settle(sel); syncFlora(); save();
+    ta.value = ''; ta.disabled = false; btn.disabled = true; newPrompt(); updCount();
+    after.classList.remove('show', 'ready'); after.inert = true;
+    card.classList.remove('gone');
+    card.inert = false;                                  // restore the card to the tab order
+    lastLab = '';                                        // so the first breathing cue of the next round always paints
+    ta.focus({ preventScroll: true });
+  });
+
+  /* ---------- two-step reset: no native confirm(), reversible by doing nothing ---------- */
+  let resetT = 0;
+  const disarmReset = () => { clearTimeout(resetT); resetB.classList.remove('armed'); resetB.textContent = 'Reset forest'; resetB.setAttribute('aria-label', 'Reset forest'); };
+  resetB.addEventListener('click', () => {
+    if (!resetB.classList.contains('armed')) {           // first press arms, second confirms
+      resetB.classList.add('armed'); resetB.textContent = 'Really reset?';
+      resetB.setAttribute('aria-label', 'Confirm reset — erases your whole forest');
+      clearTimeout(resetT); resetT = setTimeout(disarmReset, 3500);
+      return;
+    }
+    disarmReset();
+    doReset();
+  });
+  function doReset() {
+    if (phase === 'releasing') stopHum();                // tear down anything in flight
+    particles.length = 0; petals.length = 0;
+    phase = 'idle'; perP = 0;
+    /* Fresh state: three new seed keys, no retired trees, no count. */
+    plants = [0, 1, 2].map(() => ({ k: newK(), g: 0 }));
+    forest = []; count = 0; sel = 0;
+    G = Gt = 0; pulse = 0; auraV = 0;
+    trees.clear();                                       // drop cached branch geometry for the old keys
+    try { localStorage.removeItem(KEY); localStorage.removeItem('thought-decay:forest:v1'); } catch (e) {}
+    /* Put the interface back into its opening state. */
+    ta.value = ''; ta.disabled = false; btn.disabled = true; newPrompt(); updCount();
+    card.classList.remove('gone'); card.inert = false;
+    after.classList.remove('show', 'ready'); after.inert = true;
+    lastLab = '';
+    pick(0, true);                                       // re-check Sakura and refresh the radio tabindex
+    syncFlora(); save();                                 // persist the empty forest
+    toast('Forest cleared');
+  }
+
+  const paintMute = () => { muteB.classList.toggle('off', muted); muteB.setAttribute('aria-pressed', muted); muteB.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound'); };
+  muteB.addEventListener('click', () => {
+    muted = !muted; try { localStorage.setItem(MKEY, muted ? '1' : '0'); } catch (e) {}
+    if (ensureAudio()) master.gain.setTargetAtTime(muted ? 0 : .7, AC.currentTime, .05);
+    paintMute();
+  });
+  addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+  newPrompt(); pick(sel, true); paintMute(); updCount();
+  /* A returning visitor's half-grown tree is explained in the caption, so give it a gentle entrance
+     rather than letting it sit there unannounced on first paint. */
+  if (restored) { flora.style.opacity = '0'; requestAnimationFrame(() => { flora.style.transition = 'opacity 1.4s ease .6s'; flora.style.opacity = '1'; }); }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

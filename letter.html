@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Unsent Letter</title>
+<meta name="description" content="Write to someone. It never sends. It just drifts.">
+<meta name="theme-color" content="#0c0e1a">
+<style>
+:root{--bg:#0c0e1a;--ink:#e0e5f0;--mute:#8892b0;--dim:#5a6480;--line:rgba(180,195,230,.14);--accent:190,205,240}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;-webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;touch-action:none;cursor:crosshair}
+.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);backdrop-filter:blur(6px);
+  transition:color .3s,border-color .3s,background .3s}
+.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:4;
+  display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+.hud-btn{font:inherit;cursor:pointer;padding:9px 16px;border-radius:999px;
+  font-size:12px;letter-spacing:.08em;color:#e0e5f0;pointer-events:auto;
+  border:1px solid rgba(var(--accent),.4);
+  background:rgba(20,26,42,.72);backdrop-filter:blur(8px);
+  transition:opacity .6s ease,box-shadow .4s,border-color .4s,transform .2s;
+  opacity:0;transform:translateY(-6px)}
+.hud-btn.show{opacity:1;transform:translateY(0)}
+.hud-btn:hover{box-shadow:0 0 24px rgba(var(--accent),.3);border-color:rgba(var(--accent),.7)}
+.hud-btn:active{transform:scale(.97)}
+.count{color:var(--mute);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  font-style:italic;opacity:0;transition:opacity .8s ease;
+  padding:6px 12px;border-radius:999px;background:rgba(16,20,34,.6);backdrop-filter:blur(6px)}
+.count.show{opacity:.85}
+.compose{position:fixed;left:50%;top:50%;width:min(540px,calc(100% - 40px));
+  transform:translate(-50%,-50%);z-index:3;
+  background:rgba(20,24,36,.72);backdrop-filter:blur(14px);
+  border:1px solid var(--line);border-radius:18px;padding:20px 22px 16px;
+  box-shadow:0 24px 60px -30px rgba(0,0,0,.9);
+  transition:opacity .55s ease, transform .55s ease}
+.compose.hidden{opacity:0;transform:translate(-50%,-46%);pointer-events:none}
+.compose .to-row{display:flex;align-items:baseline;gap:12px;padding-bottom:10px;
+  border-bottom:1px solid var(--line);margin-bottom:12px}
+.compose .to-row label{color:var(--mute);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.compose .to-row input{flex:1;background:none;border:0;outline:none;color:var(--ink);
+  font:300 17px/1.4 inherit;padding:4px 0}
+.compose .to-row input::placeholder{color:var(--dim);font-style:italic}
+.compose textarea{display:block;width:100%;min-height:112px;resize:none;
+  background:none;border:0;outline:none;color:var(--ink);
+  font:300 17px/1.75 inherit;padding:0}
+.compose textarea::placeholder{color:var(--dim);font-style:italic}
+.compose .actions{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.compose .hint{color:var(--dim);font-size:11px;font-style:italic;letter-spacing:.02em;line-height:1.5}
+.compose button{font:inherit;cursor:pointer;padding:11px 26px;border-radius:999px;
+  color:#eaf0ff;font-size:14px;letter-spacing:.08em;white-space:nowrap;
+  border:1px solid rgba(var(--accent),.45);
+  background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.06));
+  transition:box-shadow .4s,border-color .4s,transform .2s,opacity .4s}
+.compose button:hover:not(:disabled){box-shadow:0 0 28px rgba(var(--accent),.35);border-color:rgba(var(--accent),.8)}
+.compose button:active:not(:disabled){transform:scale(.98)}
+.compose button:disabled{opacity:.35;cursor:default}
+/* bottom action bar shown in aiming mode */
+.actionbar{position:fixed;left:50%;bottom:20px;z-index:3;
+  display:flex;gap:10px;align-items:center;
+  transform:translateX(-50%) translateY(14px);
+  opacity:0;pointer-events:none;
+  transition:opacity .5s ease, transform .5s ease}
+.actionbar.show{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+.actionbar button{font:inherit;cursor:pointer;padding:10px 24px;border-radius:999px;
+  font-size:13px;letter-spacing:.08em;white-space:nowrap;
+  transition:box-shadow .4s,border-color .4s,transform .2s,color .3s,background .3s}
+.actionbar .ghost{color:#a8b3c8;background:rgba(20,24,36,.7);backdrop-filter:blur(8px);
+  border:1px solid var(--line)}
+.actionbar .ghost:hover{color:#e0e5f0;border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.08)}
+.actionbar .primary{color:#eaf0ff;
+  border:1px solid rgba(var(--accent),.6);
+  background:linear-gradient(rgba(var(--accent),.22),rgba(var(--accent),.08));
+  box-shadow:0 0 22px rgba(var(--accent),.2)}
+.actionbar .primary:hover{box-shadow:0 0 32px rgba(var(--accent),.45);border-color:rgba(var(--accent),.9)}
+.actionbar button:active{transform:scale(.97)}
+.reader{position:fixed;inset:0;z-index:8;background:rgba(4,6,12,.92);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;padding:40px 20px}
+.reader.show{display:flex;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.reader-inner{max-width:560px;width:100%;background:rgba(16,20,32,.96);
+  border:1px solid rgba(var(--accent),.25);border-radius:18px;
+  padding:30px 28px 24px;position:relative;max-height:82vh;overflow:auto;
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.9)}
+.reader h3{margin:0 0 4px;font-weight:400;font-size:20px;color:#e8eefc}
+.reader .date{margin:0 0 22px;color:var(--dim);font-size:12px;letter-spacing:.08em;font-style:italic}
+.reader .body{white-space:pre-wrap;font-size:17px;line-height:1.85;color:var(--ink);
+  transition:opacity .6s ease,filter .6s ease}
+.reader .fade{margin:22px 0 0;padding-top:16px;border-top:1px solid var(--line);
+  color:var(--dim);font-size:12px;font-style:italic;letter-spacing:.04em;text-align:center}
+.reader .close{position:absolute;top:12px;right:14px;width:32px;height:32px;border-radius:999px;
+  display:grid;place-items:center;background:none;border:1px solid var(--line);color:var(--mute);
+  cursor:pointer;font-size:18px;line-height:1;padding:0;transition:color .3s,border-color .3s}
+.reader .close:hover{color:var(--ink);border-color:rgba(var(--accent),.5)}
+.reader .tools{margin-top:20px;display:flex;justify-content:center}
+.reader .tools button{font:inherit;cursor:pointer;padding:8px 18px;border-radius:999px;
+  font-size:12px;letter-spacing:.08em;color:#c8d0e6;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);
+  transition:color .3s,border-color .3s,background .3s}
+.reader .tools button:hover{color:#ffb0b0;border-color:rgba(255,140,140,.5);background:rgba(255,140,140,.08)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;animation-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+
+<div class="hud">
+  <button class="hud-btn" id="land">↓ Return to write</button>
+  <span class="count" id="count"></span>
+</div>
+
+<div class="compose" id="compose">
+  <div class="to-row">
+    <label for="to">To</label>
+    <input id="to" maxlength="60" placeholder="someone you'll never send this to" autocomplete="off">
+  </div>
+  <textarea id="body" maxlength="2000" placeholder="Say what you need to say. No one will read it but you."></textarea>
+  <div class="actions">
+    <span class="hint">It will never reach anyone. It just drifts.</span>
+    <button id="done" disabled>Done writing →</button>
+  </div>
+</div>
+
+<div class="actionbar" id="actionbar">
+  <button class="ghost" id="edit">← Edit</button>
+  <button class="primary" id="fire">Launch</button>
+</div>
+
+<div class="reader" id="reader">
+  <div class="reader-inner">
+    <button class="close" id="close" aria-label="Close">×</button>
+    <h3 id="rto"></h3>
+    <p class="date" id="rdate"></p>
+    <div class="body" id="rbody"></div>
+    <p class="fade" id="rfade"></p>
+    <div class="tools"><button id="delete">Let it go</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cv = $('#c'), ctx = cv.getContext('2d');
+  const toEl = $('#to'), bodyEl = $('#body'), doneBtn = $('#done'),
+        compose = $('#compose'), actionbar = $('#actionbar'), editBtn = $('#edit'), fireBtn = $('#fire'),
+        landBtn = $('#land'), countEl = $('#count'),
+        reader = $('#reader'), rto = $('#rto'), rdate = $('#rdate'), rbody = $('#rbody'),
+        rfade = $('#rfade'), closeBtn = $('#close'), deleteBtn = $('#delete');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let W=0,H=0,dpr=1;
+  function resize(){
+    dpr = Math.min(devicePixelRatio||1,2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W*dpr; cv.height = H*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  addEventListener('resize', resize); resize();
+
+  /* ---------- world <-> screen ---------- */
+  const HORIZON_OFFSET = 80;
+  const orbitCamY = () => 2480 - H * .5;
+  const worldToScreenY = wy => H - HORIZON_OFFSET - (wy - cameraY);
+  const lerp = (a,b,t) => a + (b-a)*t;
+  const easeOutCubic = t => 1 - Math.pow(1-t, 3);
+  const easeInOutCubic = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3) / 2;
+  const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const fmt = t => new Date(t).toLocaleString(undefined, { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const fadeFor = l => Math.max(.15, Math.pow(.86, l.reads || 0));
+
+  /* ---------- state ---------- */
+  let cameraY = 0;
+  let state = 'ground';   // ground | ascending | orbit | descending
+  let writingMode = true; // true = compose visible, false = aiming
+  let ascendT0 = 0;
+  const ASCEND_DURATION = 3.6;
+  let ascendCraft = null;
+  let trail = [];
+
+  let reticleFrac = .5;
+  let aimEngaged = false;
+  let isDragging = false;
+  let pointerDown = null;
+
+  /* ---------- persistence ---------- */
+  const KEY = 'unsent-letters:v2';
+  const V1_KEY = 'unsent-letters:v1';
+  let letters = [];
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (Array.isArray(raw)){
+      letters = raw.filter(l => l && typeof l.body === 'string').map(l => ({
+        id: l.id || (Date.now() + '-' + Math.random().toString(36).slice(2,7)),
+        to: l.to || '', body: l.body, at: l.at || Date.now(),
+        reads: l.reads || 0,
+        worldY: Number.isFinite(l.worldY) ? l.worldY : (2400 + (Math.random()-.5) * 500),
+        x: Number.isFinite(l.x) ? l.x : (.18 + Math.random() * .64)
+      }));
+    } else {
+      const v1 = JSON.parse(localStorage.getItem(V1_KEY) || 'null');
+      if (Array.isArray(v1)){
+        letters = v1.map(l => ({
+          id: l.id || (Date.now() + '-' + Math.random().toString(36).slice(2,7)),
+          to: l.to || '', body: l.body || '', at: l.at || Date.now(),
+          reads: l.reads || 0,
+          worldY: 2400 + (Math.random()-.5) * 500,
+          x: .18 + Math.random() * .64
+        }));
+      }
+    }
+  } catch(e){ letters = []; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(letters)); } catch(e){} };
+
+  /* ---------- background stars ---------- */
+  const bgStars = [];
+  (function initBg(){
+    const N = calm ? 90 : 240;
+    for (let i = 0; i < N; i++){
+      bgStars.push({
+        x: Math.random(),
+        y: -300 + Math.random() * 4200,
+        r: .4 + Math.random() * 1.1,
+        seed: Math.random() * 6.28,
+        bright: .4 + Math.random() * .55
+      });
+    }
+  })();
+
+  /* ---------- launcher geometry ---------- */
+  const BARREL_LEN = 46;
+  function launcherPivot(){
+    return { x: W * .5, y: worldToScreenY(0) - 8 };
+  }
+  function reticleScreen(){
+    return { x: reticleFrac * W, y: H * .5 };
+  }
+  function launcherAngle(){
+    const P = launcherPivot();
+    const R = reticleScreen();
+    return Math.atan2(R.x - P.x, Math.max(1, P.y - R.y));
+  }
+  function launcherMuzzle(){
+    const P = launcherPivot();
+    const a = launcherAngle();
+    return {
+      x: P.x + Math.sin(a) * BARREL_LEN,
+      y: P.y - Math.cos(a) * BARREL_LEN
+    };
+  }
+  function trajectoryControl(){
+    const m = launcherMuzzle();
+    const R = reticleScreen();
+    const a = launcherAngle();
+    const dirX = Math.sin(a), dirY = -Math.cos(a);
+    const dist = Math.hypot(R.x - m.x, R.y - m.y);
+    const k = Math.max(40, dist * .55);
+    return { x: m.x + dirX * k, y: m.y + dirY * k };
+  }
+  function bezierPoint(m, c, R, t){
+    const u = 1 - t;
+    return {
+      x: u*u*m.x + 2*u*t*c.x + t*t*R.x,
+      y: u*u*m.y + 2*u*t*c.y + t*t*R.y
+    };
+  }
+  function bezierTangent(m, c, R, t){
+    let dx = 2*(1-t)*(c.x - m.x) + 2*t*(R.x - c.x);
+    let dy = 2*(1-t)*(c.y - m.y) + 2*t*(R.y - c.y);
+    const dl = Math.hypot(dx, dy) || 1;
+    return { x: dx/dl, y: dy/dl };
+  }
+
+  /* ---------- audio ---------- */
+  let AC=null;
+  function ensureAudio(){
+    if (!AC){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch(e){ return false; }
+    }
+    if (AC.state !== 'running') AC.resume().catch(()=>{});
+    return true;
+  }
+  function startLaunchSound(){
+    if (!ensureAudio()) return;
+    const t = AC.currentTime;
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(90, t);
+    o.frequency.exponentialRampToValueAtTime(680, t + ASCEND_DURATION * .85);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(.10, t + .6);
+    g.gain.linearRampToValueAtTime(0, t + ASCEND_DURATION);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + ASCEND_DURATION + .4);
+
+    const nb = AC.createBuffer(1, AC.sampleRate * 3, AC.sampleRate);
+    const d = nb.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    const ns = AC.createBufferSource(); ns.buffer = nb;
+    const bp = AC.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.value = 1400; bp.Q.value = .8;
+    const ng = AC.createGain();
+    ng.gain.setValueAtTime(0, t);
+    ng.gain.linearRampToValueAtTime(.05, t + .7);
+    ng.gain.linearRampToValueAtTime(0, t + ASCEND_DURATION);
+    ns.connect(bp); bp.connect(ng); ng.connect(AC.destination);
+    ns.start(t);
+  }
+  function settleSound(){
+    if (!ensureAudio()) return;
+    const t = AC.currentTime;
+    [880, 1320, 1760].forEach((f, i) => {
+      const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+      const g = AC.createGain();
+      g.gain.setValueAtTime(0, t + i * .08);
+      g.gain.linearRampToValueAtTime(.06 - i*.015, t + i * .08 + .04);
+      g.gain.exponentialRampToValueAtTime(.0001, t + i * .08 + 1.6);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t + i * .08); o.stop(t + i * .08 + 1.8);
+    });
+  }
+
+  /* ---------- mode switching ---------- */
+  function enterAiming(){
+    if (state !== 'ground' || !writingMode) return;
+    if (!bodyEl.value.trim()) return;
+    writingMode = false;
+    compose.classList.add('hidden');
+    actionbar.classList.add('show');
+    // give keyboard users a chance to skip the textarea
+    bodyEl.blur();
+    toEl.blur();
+  }
+  function enterWriting(){
+    if (state !== 'ground' || writingMode) return;
+    writingMode = true;
+    compose.classList.remove('hidden');
+    actionbar.classList.remove('show');
+  }
+  doneBtn.addEventListener('click', enterAiming);
+  editBtn.addEventListener('click', enterWriting);
+
+  /* ---------- launch ---------- */
+  function launchLetter(){
+    const text = bodyEl.value.trim();
+    if (!text || state !== 'ground') return;
+    // if the user hits fire without first leaving writing mode, do that now
+    if (writingMode) enterAiming();
+
+    const letter = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      to: toEl.value.trim(),
+      body: text,
+      at: Date.now(),
+      reads: 0,
+      worldY: 2400,
+      x: reticleFrac
+    };
+
+    const muzzle = launcherMuzzle();
+    const R = reticleScreen();
+    const control = trajectoryControl();
+
+    ascendCraft = {
+      letter,
+      muzzle: { x: muzzle.x, y: muzzle.y },
+      control: { x: control.x, y: control.y },
+      target: { x: R.x, y: R.y },
+      currentX: muzzle.x,
+      currentY: muzzle.y
+    };
+
+    trail = [];
+    ascendT0 = performance.now() / 1000;
+    state = 'ascending';
+    actionbar.classList.remove('show');
+    startLaunchSound();
+    updateHud();
+  }
+  fireBtn.addEventListener('click', launchLetter);
+
+  /* ---------- HUD ---------- */
+  function updateHud(){
+    landBtn.classList.toggle('show', state === 'orbit');
+    const n = letters.length;
+    countEl.textContent = n === 0 ? 'the sky is empty' : n === 1 ? '1 letter adrift' : `${n} letters adrift`;
+    countEl.classList.toggle('show', state === 'orbit');
+  }
+
+  landBtn.addEventListener('click', () => {
+    if (state !== 'orbit') return;
+    state = 'descending';
+    updateHud();
+  });
+
+  /* ---------- update ---------- */
+  function update(dt){
+    const now = performance.now() / 1000;
+    const OC = orbitCamY();
+
+    if (state === 'ascending' && ascendCraft){
+      const t = clamp01((now - ascendT0) / ASCEND_DURATION);
+      const e = easeInOutCubic(t);
+
+      const camT = clamp01((t - .12) / .88);
+      cameraY = OC * easeOutCubic(camT);
+
+      const p = bezierPoint(ascendCraft.muzzle, ascendCraft.control, ascendCraft.target, e);
+      ascendCraft.currentX = p.x;
+      ascendCraft.currentY = p.y;
+
+      if (Math.random() < .9){
+        trail.push({
+          sx: p.x + (Math.random()-.5) * 8,
+          sy: p.y + (Math.random()-.5) * 8,
+          life: 1,
+          seed: Math.random() * 6.28
+        });
+      }
+
+      if (t >= 1){
+        letters.push(ascendCraft.letter);
+        save();
+        ascendCraft = null;
+        state = 'orbit';
+        settleSound();
+        updateHud();
+      }
+    } else if (state === 'orbit'){
+      cameraY += (OC - cameraY) * .06;
+    } else if (state === 'descending'){
+      cameraY += (0 - cameraY) * .06;
+      if (cameraY < 3){
+        cameraY = 0;
+        state = 'ground';
+        toEl.value = '';
+        bodyEl.value = '';
+        doneBtn.disabled = true;
+        writingMode = true;
+        compose.classList.remove('hidden');
+        actionbar.classList.remove('show');
+        aimEngaged = false;
+        updateHud();
+      }
+    }
+
+    for (let i = trail.length - 1; i >= 0; i--){
+      trail[i].life -= dt * .011;
+      if (trail[i].life <= 0) trail.splice(i, 1);
+    }
+  }
+
+  /* ---------- draw ---------- */
+  function draw(ts){
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const spaceT = clamp01(cameraY / 1800);
+
+    const topR = lerp(38, 2, spaceT), topG = lerp(26, 4, spaceT), topB = lerp(58, 14, spaceT);
+    const botR = lerp(220, 10, spaceT), botG = lerp(108, 16, spaceT), botB = lerp(62, 34, spaceT);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, `rgb(${topR|0},${topG|0},${topB|0})`);
+    g.addColorStop(1, `rgb(${botR|0},${botG|0},${botB|0})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    const horizonY = worldToScreenY(0);
+    const horizonFade = clamp01(1 - cameraY / 1400);
+    if (horizonFade > 0){
+      const hg = ctx.createRadialGradient(W/2, horizonY, 0, W/2, horizonY, Math.max(W, H) * .85);
+      hg.addColorStop(0, `rgba(255,150,80,${.42 * horizonFade})`);
+      hg.addColorStop(.45, `rgba(255,110,55,${.14 * horizonFade})`);
+      hg.addColorStop(1, 'rgba(255,110,55,0)');
+      ctx.fillStyle = hg;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    const starVis = clamp01((cameraY - 250) / 900);
+    if (starVis > 0){
+      for (const s of bgStars){
+        const sy = worldToScreenY(s.y);
+        if (sy < -10 || sy > H + 10) continue;
+        const sx = s.x * W;
+        const tw = .7 + .3 * Math.sin(ts * .0015 + s.seed);
+        ctx.globalAlpha = starVis * s.bright * tw;
+        ctx.fillStyle = 'rgb(220,230,255)';
+        ctx.beginPath();
+        ctx.arc(sx, sy, s.r, 0, 6.28);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* launcher dims in writing mode so it doesn't compete with the textarea */
+    const camAlpha = clamp01(1 - cameraY / 500);
+    const aimAlpha = camAlpha * (writingMode ? 0.18 : 1);
+    if (aimAlpha > .01 && state === 'ground'){
+      if (!writingMode) drawTrajectory(ts, aimAlpha);
+      drawLauncher(ts, aimAlpha);
+    }
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (const tr of trail){
+      const a = tr.life * .75;
+      const rr = 2 + (1 - tr.life) * 6;
+      const gg = ctx.createRadialGradient(tr.sx, tr.sy, 0, tr.sx, tr.sy, rr * 3);
+      gg.addColorStop(0, `rgba(255,230,180,${a})`);
+      gg.addColorStop(1, 'rgba(255,180,100,0)');
+      ctx.fillStyle = gg;
+      ctx.fillRect(tr.sx - rr*3, tr.sy - rr*3, rr*6, rr*6);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    for (const l of letters){
+      const sy = worldToScreenY(l.worldY);
+      if (sy < -60 || sy > H + 60) continue;
+      const sx = l.x * W;
+      const fade = fadeFor(l);
+      const tw = .85 + .15 * Math.sin(ts * .0008 + l.at * .0001);
+      drawCraft(sx, sy, 11, Math.sin(ts * .0004 + l.at * .001) * .06, tw, fade, false);
+    }
+
+    if (ascendCraft){
+      const p = { x: ascendCraft.currentX, y: ascendCraft.currentY };
+      const t = clamp01((performance.now()/1000 - ascendT0) / ASCEND_DURATION);
+      const tangent = bezierTangent(ascendCraft.muzzle, ascendCraft.control, ascendCraft.target, t);
+
+      const streakLen = 90;
+      const tailX = p.x - tangent.x * streakLen;
+      const tailY = p.y - tangent.y * streakLen;
+
+      ctx.globalCompositeOperation = 'lighter';
+      const sg = ctx.createLinearGradient(tailX, tailY, p.x, p.y);
+      sg.addColorStop(0, 'rgba(255,180,100,0)');
+      sg.addColorStop(.5, 'rgba(255,200,120,.35)');
+      sg.addColorStop(1, 'rgba(255,240,200,.75)');
+      ctx.strokeStyle = sg;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+
+      const angle = Math.atan2(tangent.x, -tangent.y);
+      drawCraft(p.x, p.y, 15, angle, 1.35, 1, true);
+    }
+  }
+
+  function drawLauncher(ts, alpha){
+    const P = launcherPivot();
+    const a = launcherAngle();
+    const pulse = .7 + .3 * Math.sin(ts * .006);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const gy = P.y + 8;
+    ctx.fillStyle = 'rgba(30,24,22,.92)';
+    ctx.beginPath();
+    ctx.ellipse(P.x, gy + 3, 32, 6, 0, 0, 6.28);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(60,48,42,1)';
+    ctx.beginPath();
+    ctx.moveTo(P.x - 22, gy + 3);
+    ctx.lineTo(P.x + 22, gy + 3);
+    ctx.lineTo(P.x + 12, P.y);
+    ctx.lineTo(P.x - 12, P.y);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.translate(P.x, P.y);
+    ctx.rotate(a);
+
+    const bg = ctx.createLinearGradient(-8, 0, 8, 0);
+    bg.addColorStop(0, 'rgba(50,40,36,1)');
+    bg.addColorStop(.5, 'rgba(95,78,68,1)');
+    bg.addColorStop(1, 'rgba(50,40,36,1)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(-7, -BARREL_LEN, 14, BARREL_LEN);
+
+    ctx.fillStyle = 'rgba(120,98,82,.9)';
+    ctx.fillRect(-9, -BARREL_LEN + 8, 18, 3);
+    ctx.fillRect(-9, -BARREL_LEN * .45, 18, 3);
+
+    ctx.fillStyle = 'rgba(160,132,108,1)';
+    ctx.fillRect(-10, -BARREL_LEN - 4, 20, 6);
+
+    ctx.globalCompositeOperation = 'lighter';
+    const mg = ctx.createRadialGradient(0, -BARREL_LEN, 0, 0, -BARREL_LEN, 24);
+    mg.addColorStop(0, `rgba(255,230,170,${.75 * pulse})`);
+    mg.addColorStop(.35, `rgba(255,180,110,${.35 * pulse})`);
+    mg.addColorStop(1, 'rgba(255,180,110,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(-24, -BARREL_LEN - 24, 48, 48);
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.fillStyle = `rgba(255,245,215,${.95 * pulse})`;
+    ctx.beginPath();
+    ctx.arc(0, -BARREL_LEN, 2.6, 0, 6.28);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawTrajectory(ts, alpha){
+    const m = launcherMuzzle();
+    const R = reticleScreen();
+    const c = trajectoryControl();
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const STEPS = 28;
+    for (let i = 0; i <= STEPS; i++){
+      const t = i / STEPS;
+      const p = bezierPoint(m, c, R, t);
+      const size = .8 + t * 1.6;
+      const a = (.15 + t * .55) * alpha;
+      ctx.fillStyle = `rgba(255,220,160,${a})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size, 0, 6.28);
+      ctx.fill();
+    }
+
+    const pulse = .75 + .25 * Math.sin(ts * .004);
+    ctx.strokeStyle = `rgba(255,220,160,${.65 * pulse})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(R.x, R.y, 16, 0, 6.28);
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(255,240,200,${.4 * pulse})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(R.x, R.y, 10, 0, 6.28);
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(255,240,200,${.9 * pulse})`;
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(R.x - 22, R.y); ctx.lineTo(R.x - 8, R.y);
+    ctx.moveTo(R.x + 8, R.y);  ctx.lineTo(R.x + 22, R.y);
+    ctx.moveTo(R.x, R.y - 22); ctx.lineTo(R.x, R.y - 8);
+    ctx.moveTo(R.x, R.y + 8);  ctx.lineTo(R.x, R.y + 22);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255,240,200,${.95 * pulse})`;
+    ctx.beginPath();
+    ctx.arc(R.x, R.y, 2, 0, 6.28);
+    ctx.fill();
+
+    if (!aimEngaged){
+      ctx.globalAlpha = alpha * (.5 + .25 * Math.sin(ts * .003));
+      ctx.fillStyle = 'rgba(255,220,180,1)';
+      ctx.font = '12px "Iowan Old Style","Palatino Linotype",Georgia,serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('drag to aim', R.x, R.y + 42);
+    }
+    ctx.restore();
+  }
+
+  function drawCraft(x, y, size, angle, glow, fade, isLaunching){
+    ctx.globalCompositeOperation = 'lighter';
+    const rr = size * 4;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rr);
+    g.addColorStop(0, `rgba(255,225,175,${.6 * glow * fade})`);
+    g.addColorStop(.4, `rgba(255,185,110,${.24 * glow * fade})`);
+    g.addColorStop(1, 'rgba(255,160,80,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - rr, y - rr, rr*2, rr*2);
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.globalAlpha = fade;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.15);
+    ctx.lineTo(size * .95, size * .55);
+    ctx.lineTo(0, size * .25);
+    ctx.lineTo(-size * .95, size * .55);
+    ctx.closePath();
+    const pg = ctx.createLinearGradient(-size, -size, size, size);
+    pg.addColorStop(0, 'rgba(255,250,235,.98)');
+    pg.addColorStop(.55, 'rgba(255,235,200,.96)');
+    pg.addColorStop(1, 'rgba(230,200,165,.94)');
+    ctx.fillStyle = pg;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.15);
+    ctx.lineTo(0, size * .25);
+    ctx.strokeStyle = 'rgba(170,130,90,.5)';
+    ctx.lineWidth = .9;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 1.15);
+    ctx.lineTo(size * .95, size * .55);
+    ctx.moveTo(0, -size * 1.15);
+    ctx.lineTo(-size * .95, size * .55);
+    ctx.strokeStyle = 'rgba(150,110,70,.4)';
+    ctx.lineWidth = .8;
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  /* ---------- pointer ---------- */
+  cv.addEventListener('pointerdown', e => {
+    pointerDown = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+    isDragging = false;
+    try { cv.setPointerCapture(e.pointerId); } catch(_) {}
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!pointerDown) return;
+    const dx = e.clientX - pointerDown.x, dy = e.clientY - pointerDown.y;
+    if (!isDragging && Math.hypot(dx, dy) > 5) isDragging = true;
+    if (isDragging && state === 'ground' && !writingMode){
+      reticleFrac = clamp(e.clientX / W, .1, .9);
+      if (!aimEngaged) aimEngaged = true;
+    }
+  });
+  cv.addEventListener('pointerup', e => {
+    if (!pointerDown) return;
+    const wasDragging = isDragging;
+    const downT = pointerDown.t;
+    pointerDown = null;
+    isDragging = false;
+    try { cv.releasePointerCapture(e.pointerId); } catch(_) {}
+    if (wasDragging) return;
+    if (performance.now() - downT > 500) return;
+
+    const x = e.clientX, y = e.clientY;
+    let best = null, bestD2 = 34 * 34;
+    for (const l of letters){
+      const sy = worldToScreenY(l.worldY);
+      const sx = l.x * W;
+      const d2 = (sx - x)**2 + (sy - y)**2;
+      if (d2 < bestD2){ bestD2 = d2; best = l; }
+    }
+    if (best) openLetter(best);
+  });
+  cv.addEventListener('pointercancel', () => { pointerDown = null; isDragging = false; });
+
+  document.addEventListener('keydown', e => {
+    const tgt = document.activeElement;
+    if (tgt === bodyEl || tgt === toEl) return;
+    if (e.key === 'ArrowLeft')  { reticleFrac = clamp(reticleFrac - .035, .1, .9); aimEngaged = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight') { reticleFrac = clamp(reticleFrac + .035, .1, .9); aimEngaged = true; e.preventDefault(); }
+  });
+
+  /* ---------- reader ---------- */
+  function openLetter(l){
+    l.reads = (l.reads || 0) + 1;
+    save();
+    rto.textContent = l.to ? `To ${l.to}` : 'To —';
+    rdate.textContent = `Launched ${fmt(l.at)}`;
+    rbody.textContent = l.body;
+    const fade = fadeFor(l);
+    rbody.style.opacity = fade;
+    rbody.style.filter = fade < .55 ? `blur(${(1-fade) * 1.6}px)` : 'none';
+    rfade.textContent = (l.reads === 1)
+      ? 'Read it once more, and it will start to fade.'
+      : `You have read this ${l.reads} times. It is fading.`;
+    deleteBtn.dataset.id = l.id;
+    reader.classList.add('show');
+  }
+  function closeReader(){ reader.classList.remove('show'); }
+  closeBtn.addEventListener('click', closeReader);
+  reader.addEventListener('click', e => { if (e.target === reader) closeReader(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReader(); });
+  deleteBtn.addEventListener('click', () => {
+    const id = deleteBtn.dataset.id;
+    const i = letters.findIndex(l => l.id === id);
+    if (i >= 0){ letters.splice(i, 1); save(); }
+    closeReader();
+    updateHud();
+  });
+
+  /* ---------- UI wiring ---------- */
+  const upd = () => { doneBtn.disabled = !bodyEl.value.trim(); };
+  bodyEl.addEventListener('input', upd);
+  bodyEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) enterAiming();
+  });
+
+  /* ---------- main loop ---------- */
+  let last = performance.now();
+  function frame(ts){
+    const dt = Math.min(3, (ts - last) / 16.667 || 1); last = ts;
+    update(dt);
+    draw(ts);
+    requestAnimationFrame(frame);
+  }
+  updateHud();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bubble Wrap</title>
+<meta name="description" content="Pop. Nothing to think about. Weirdly effective.">
+<meta name="theme-color" content="#120c16">
+<style>
+:root{
+  --bg:#120c16;
+  --ink:#ffe0f0;
+  --mute:#b088a8;
+  --dim:#6a5268;
+  --line:rgba(255,180,220,.14);
+  --accent:255,180,220;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:
+    radial-gradient(65% 45% at 50% -6%,rgba(255,140,210,.16),transparent 70%),
+    radial-gradient(70% 40% at 50% 108%,rgba(160,80,180,.14),transparent 70%),
+    var(--bg);
+  color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  -webkit-font-smoothing:antialiased;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;
+}
+#fx{
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;display:block;
+}
+.back{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  background:rgba(20,12,26,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s;
+}
+.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
+  background:rgba(20,12,26,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s;
+}
+.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute svg{width:16px;height:16px}
+.mute .m{display:block}
+.mute .x{display:none}
+.mute.off .m{display:none}
+.mute.off .x{display:block}
+
+.hud{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 20px);left:50%;
+  transform:translateX(-50%);
+  z-index:4;color:var(--mute);
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  font-style:italic;text-align:center;line-height:1.6;
+  pointer-events:none;padding:0 16px;
+  display:flex;align-items:baseline;gap:12px;justify-content:center;
+  flex-wrap:wrap;
+}
+.hud b{
+  color:var(--ink);font-weight:400;font-style:normal;
+  letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.hud .sep{opacity:.4}
+
+.combo{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 68px);left:50%;
+  transform:translateX(-50%) scale(.4);
+  z-index:4;
+  color:#ffd8f2;
+  font-size:clamp(22px,4vw,30px);
+  font-weight:300;letter-spacing:.14em;
+  text-shadow:
+    0 0 20px rgba(255,150,220,.55),
+    0 0 44px rgba(255,150,220,.35),
+    0 0 70px rgba(255,150,220,.18);
+  opacity:0;pointer-events:none;
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1),
+             opacity .28s ease;
+  font-variant-numeric:tabular-nums;
+}
+.combo.show{
+  transform:translateX(-50%) scale(1);
+  opacity:1;
+}
+.combo.pump{
+  animation:comboPump .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes comboPump{
+  0%{transform:translateX(-50%) scale(1)}
+  50%{transform:translateX(-50%) scale(1.28)}
+  100%{transform:translateX(-50%) scale(1)}
+}
+
+.stage{
+  position:relative;
+  z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;
+  padding:80px 24px 130px;
+}
+.sheet{
+  display:grid;
+  gap:8px;
+  padding:18px;
+  border-radius:22px;
+  background:
+    linear-gradient(135deg,rgba(255,220,245,.03),rgba(200,120,220,.02)),
+    radial-gradient(circle at 50% 0%,rgba(255,200,240,.05),transparent 70%);
+  border:1px solid rgba(255,200,235,.08);
+  box-shadow:
+    inset 0 0 80px rgba(255,200,240,.05),
+    inset 0 0 0 1px rgba(255,255,255,.02),
+    0 24px 70px -32px rgba(0,0,0,.85);
+  position:relative;
+  transition:opacity .5s ease,transform .5s ease;
+}
+.sheet.rebuilding{
+  opacity:0;transform:scale(.94);
+}
+.sheet::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(120deg,
+    transparent 0%,
+    rgba(255,255,255,.035) 30%,
+    transparent 50%,
+    rgba(255,255,255,.02) 72%,
+    transparent 100%);
+  mix-blend-mode:screen;
+}
+
+.bub{
+  --h:320;
+  --s:70%;
+  position:relative;
+  aspect-ratio:1;
+  border-radius:50%;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(circle at 38% 32%,
+      hsl(var(--h) 85% 97% / .55) 0%,
+      hsl(var(--h) var(--s) 86% / .38) 14%,
+      hsl(var(--h) var(--s) 74% / .30) 36%,
+      hsl(var(--h) var(--s) 58% / .45) 65%,
+      hsl(var(--h) var(--s) 32% / .72) 100%);
+  box-shadow:
+    inset 0 -6px 14px hsl(var(--h) 55% 22% / .55),
+    inset 0 6px 12px hsl(var(--h) 90% 96% / .35),
+    inset -6px 4px 10px hsl(var(--h) 70% 55% / .32),
+    inset 6px -4px 10px hsl(var(--h) 70% 18% / .48),
+    0 2px 6px rgba(0,0,0,.35),
+    0 1px 2px rgba(0,0,0,.3);
+  border:1px solid hsl(var(--h) 80% 88% / .10);
+  transition:
+    transform .18s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .3s ease,
+    background .3s ease,
+    border-color .3s ease;
+  will-change:transform;
+}
+.bub::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:
+    radial-gradient(circle at 32% 26%,
+      rgba(255,255,255,.92) 0%,
+      rgba(255,255,255,.5) 5%,
+      rgba(255,255,255,.1) 13%,
+      transparent 22%);
+  transition:opacity .3s ease;
+  pointer-events:none;
+}
+.bub::after{
+  content:'';position:absolute;inset:14%;border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 84%,
+      hsl(var(--h) 90% 92% / .5) 0%,
+      hsl(var(--h) 80% 80% / .18) 12%,
+      transparent 26%);
+  transition:opacity .3s ease;
+  pointer-events:none;
+}
+.bub:hover{
+  transform:scale(1.05);
+  box-shadow:
+    inset 0 -6px 14px hsl(var(--h) 55% 22% / .55),
+    inset 0 6px 12px hsl(var(--h) 90% 96% / .42),
+    inset -6px 4px 10px hsl(var(--h) 70% 55% / .34),
+    inset 6px -4px 10px hsl(var(--h) 70% 18% / .48),
+    0 4px 12px rgba(0,0,0,.4),
+    0 0 26px hsl(var(--h) 80% 70% / .28);
+}
+.bub:active{transform:scale(.95)}
+
+.bub.popping{
+  animation:popAnim .42s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popAnim{
+  0%  { transform:scale(1) }
+  14% { transform:scale(1.28) translateY(-3px) }
+  42% { transform:scale(.74) }
+  70% { transform:scale(1.06) }
+  100%{ transform:scale(1) }
+}
+
+.bub.dead{
+  cursor:default;
+  background:
+    radial-gradient(circle at 50% 52%,
+      hsl(var(--h) 30% 6% / .94) 0%,
+      hsl(var(--h) 35% 12% / .9) 32%,
+      hsl(var(--h) 40% 20% / .74) 62%,
+      hsl(var(--h) 45% 30% / .52) 100%);
+  box-shadow:
+    inset 0 5px 14px rgba(0,0,0,.75),
+    inset 0 -3px 8px hsl(var(--h) 60% 40% / .3),
+    inset 2px 3px 6px hsl(var(--h) 50% 8% / .6),
+    inset -2px -3px 6px hsl(var(--h) 70% 60% / .2),
+    0 1px 2px rgba(0,0,0,.4);
+  border-color:hsl(var(--h) 50% 40% / .16);
+  transform:scale(1);
+}
+.bub.dead::before{opacity:0}
+.bub.dead::after{
+  opacity:.35;
+  background:
+    radial-gradient(circle at 50% 22%,
+      hsl(var(--h) 80% 80% / .16) 0%,
+      transparent 40%);
+}
+.bub.dead:hover{transform:scale(1);box-shadow:inherit}
+
+/* controls row */
+.controls{
+  position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);
+  left:50%;transform:translateX(-50%);
+  z-index:5;
+  display:flex;gap:10px;align-items:center;
+}
+.ctrl{
+  font:inherit;cursor:pointer;
+  padding:11px 24px;border-radius:999px;
+  color:#ffd7ea;font-size:14px;letter-spacing:.08em;
+  border:1px solid rgba(var(--accent),.45);
+  background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.06));
+  backdrop-filter:blur(8px);
+  transition:opacity .35s ease,transform .35s ease,
+             box-shadow .3s,border-color .3s,color .3s;
+  white-space:nowrap;
+  opacity:0;pointer-events:none;
+  transform:translateY(10px);
+}
+.ctrl.show{
+  opacity:1;pointer-events:auto;
+  transform:translateY(0);
+}
+.ctrl:hover{box-shadow:0 0 28px rgba(var(--accent),.35);border-color:rgba(var(--accent),.75)}
+.ctrl:active{transform:translateY(0) scale(.97)}
+.ctrl.primary{
+  color:#fff0fa;
+  border-color:hsl(320 90% 75% / .65);
+  background:linear-gradient(hsl(320 90% 70% / .22),hsl(320 90% 70% / .08));
+}
+.ctrl.primary:hover{box-shadow:0 0 32px hsl(320 90% 70% / .45)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01s!important;animation-duration:.01s!important}
+  .bub:not(.dead):not(.popping){animation:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+<button class="mute" id="mute" aria-label="Mute sound" aria-pressed="false">
+  <svg class="m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+    <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>
+  </svg>
+  <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+    <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+  </svg>
+</button>
+
+<div class="hud" id="hud">
+  <span><b id="hSheet">0</b> / <b id="hTotal">0</b> popped</span>
+  <span class="sep">·</span>
+  <span><b id="hAll">0</b> all-time</span>
+</div>
+<div class="combo" id="combo" aria-hidden="true"></div>
+
+<div class="stage">
+  <div class="sheet" id="sheet" aria-hidden="true"></div>
+</div>
+
+<div class="controls">
+  <button class="ctrl primary" id="popAll">Pop all</button>
+  <button class="ctrl" id="fresh">Fresh sheet</button>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const sheet = $('#sheet'), comboEl = $('#combo');
+  const popAllBtn = $('#popAll'), freshBtn = $('#fresh');
+  const hSheet = $('#hSheet'), hTotal = $('#hTotal'), hAll = $('#hAll');
+  const muteBtn = $('#mute');
+  const fx = $('#fx'), fctx = fx.getContext('2d');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==================== persistent total ==================== */
+  const TOTAL_KEY = 'bubblewrap:total';
+  let allTimeTotal = 0;
+  try { allTimeTotal = Number(localStorage.getItem(TOTAL_KEY) || 0) || 0; } catch(e){}
+  const saveTotal = () => { try { localStorage.setItem(TOTAL_KEY, String(allTimeTotal)); } catch(e){} };
+  hAll.textContent = allTimeTotal;
+
+  /* ==================== audio ====================
+     Signal chain:
+       [per-pop output] → panner → dryBus ──┐
+                                        ├→ compressor → master → destination
+       reverbIn → convolver → wetGain ────┘
+     The compressor is what allows pop-all's torrent of pops to stay clean
+     instead of clipping. The convolver gives every pop a small-room bloom. */
+  let AC = null, master = null, comp = null, dryBus = null, wetGain = null, reverbIn = null;
+  let noiseBuffer = null;
+  let muted = false;
+  try { muted = localStorage.getItem('bubblewrap:muted') === '1'; } catch(e){}
+
+  function makeImpulse(ctx, duration, decay){
+    const rate = ctx.sampleRate;
+    const len = Math.max(1, Math.floor(rate * duration));
+    const ir = ctx.createBuffer(2, len, rate);
+    for (let c = 0; c < 2; c++){
+      const d = ir.getChannelData(c);
+      for (let i = 0; i < len; i++){
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
+    return ir;
+  }
+
+  function ensureAudio(){
+    if (!AC){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch(e){ return false; }
+
+      master = AC.createGain();
+      master.gain.value = muted ? 0 : .82;
+      master.connect(AC.destination);
+
+      comp = AC.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 22;
+      comp.ratio.value = 8;
+      comp.attack.value = 0.002;
+      comp.release.value = 0.20;
+      comp.connect(master);
+
+      dryBus = AC.createGain();
+      dryBus.gain.value = 1;
+      dryBus.connect(comp);
+
+      const convolver = AC.createConvolver();
+      convolver.buffer = makeImpulse(AC, 0.9, 2.4);
+      reverbIn = AC.createGain();
+      reverbIn.gain.value = 1;
+      wetGain = AC.createGain();
+      wetGain.gain.value = 0.26;
+      reverbIn.connect(convolver);
+      convolver.connect(wetGain);
+      wetGain.connect(comp);
+
+      // shared noise buffer for all click layers
+      const nb = AC.createBuffer(1, Math.ceil(AC.sampleRate * 0.5), AC.sampleRate);
+      const nd = nb.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      noiseBuffer = nb;
+    }
+    if (AC.state !== 'running') AC.resume().catch(()=>{});
+    return true;
+  }
+
+  /* Pentatonic pitch climb — combo 1..N maps through a major pentatonic scale
+     up two octaves. Rapid pops become a rising melody instead of noise. */
+  const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28, 31];
+
+  let lastPopTime = 0;
+  let activeVoices = 0;
+  const MAX_VOICES = 20;
+
+  function popSound(comboN, pan = 0, opts = {}){
+    if (!ensureAudio() || muted) return;
+    const { bulk = false, intensity = 1, allowThrottle = true } = opts;
+    const now = AC.currentTime;
+    if (allowThrottle && now - lastPopTime < 0.014) return;
+    if (activeVoices >= MAX_VOICES) return;
+    lastPopTime = now;
+    activeVoices++;
+    setTimeout(() => { activeVoices = Math.max(0, activeVoices - 1); }, 600);
+
+    // pentatonic climb, clamped at the top of the scale
+    const step = Math.min(comboN, SCALE.length - 1);
+    const semi = SCALE[step];
+    const comboPitch = Math.pow(2, semi / 12);
+
+    const jitter = 1 + (Math.random() - .5) * .045;
+    const pitch = comboPitch * jitter;
+
+    // bulk pops run at lower individual volume; combo tames a little
+    const bulkScale = bulk ? .5 : 1;
+    const comboScale = 1 - Math.min(.22, comboN * .01);
+    const volScale = intensity * bulkScale * comboScale;
+
+    // stereo panner, pan reflects the bubble's x position on screen
+    let panner = null;
+    if (AC.createStereoPanner){
+      panner = AC.createStereoPanner();
+      panner.pan.value = Math.max(-1, Math.min(1, pan));
+    }
+    const dest = panner || dryBus;
+    if (panner) panner.connect(dryBus);
+
+    // wet send
+    const sendGain = AC.createGain();
+    sendGain.gain.value = 1;
+    (panner || dest).connect(sendGain);
+    sendGain.connect(reverbIn);
+
+    // ----- 1. click transient (the "crack") -----
+    const clickSrc = AC.createBufferSource();
+    clickSrc.buffer = noiseBuffer;
+    const clickHP = AC.createBiquadFilter();
+    clickHP.type = 'highpass';
+    clickHP.frequency.value = 2600;
+    const clickGain = AC.createGain();
+    clickGain.gain.setValueAtTime(0.0001, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.44 * volScale, now + 0.002);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
+    clickSrc.connect(clickHP); clickHP.connect(clickGain); clickGain.connect(dest);
+    clickSrc.start(now); clickSrc.stop(now + 0.04);
+
+    // ----- 2. body — the "pop" -----
+    const f0 = 950 * pitch;
+    const f1 = 230 * pitch;
+    const osc = AC.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f0, now);
+    osc.frequency.exponentialRampToValueAtTime(f1, now + 0.075);
+    const oscGain = AC.createGain();
+    oscGain.gain.setValueAtTime(0.0001, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.30 * volScale, now + 0.003);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.10);
+    osc.connect(oscGain); oscGain.connect(dest);
+    osc.start(now); osc.stop(now + 0.14);
+
+    // ----- 3. detuned fifth texture -----
+    const osc2 = AC.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(f0 * 1.48, now);
+    osc2.frequency.exponentialRampToValueAtTime(f1 * 1.4, now + 0.055);
+    const osc2Gain = AC.createGain();
+    osc2Gain.gain.setValueAtTime(0.0001, now);
+    osc2Gain.gain.exponentialRampToValueAtTime(0.10 * volScale, now + 0.002);
+    osc2Gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+    osc2.connect(osc2Gain); osc2Gain.connect(dest);
+    osc2.start(now); osc2.stop(now + 0.1);
+
+    // ----- 4. sub thump -----
+    const sub = AC.createOscillator();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(155 * pitch, now);
+    sub.frequency.exponentialRampToValueAtTime(72 * pitch, now + 0.06);
+    const subGain = AC.createGain();
+    subGain.gain.setValueAtTime(0.0001, now);
+    subGain.gain.exponentialRampToValueAtTime(0.14 * volScale, now + 0.004);
+    subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+    sub.connect(subGain); subGain.connect(dest);
+    sub.start(now); sub.stop(now + 0.11);
+
+    // ----- 5. papery tail -----
+    const tailSrc = AC.createBufferSource();
+    tailSrc.buffer = noiseBuffer;
+    const tailBP = AC.createBiquadFilter();
+    tailBP.type = 'bandpass';
+    tailBP.frequency.value = 2200 * pitch;
+    tailBP.Q.value = 1.4;
+    const tailGain = AC.createGain();
+    tailGain.gain.setValueAtTime(0.0001, now + 0.008);
+    tailGain.gain.exponentialRampToValueAtTime(0.055 * volScale, now + 0.014);
+    tailGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+    tailSrc.connect(tailBP); tailBP.connect(tailGain); tailGain.connect(dest);
+    tailSrc.start(now + 0.008); tailSrc.stop(now + 0.09);
+
+    // ----- 6. sparkle ring — only on combos 3+, gives fast popping its shimmer -----
+    if (comboN >= 3){
+      const spark = AC.createOscillator();
+      spark.type = 'triangle';
+      spark.frequency.value = (4200 + Math.min(8, comboN) * 180) * jitter;
+      const sparkGain = AC.createGain();
+      sparkGain.gain.setValueAtTime(0.0001, now);
+      sparkGain.gain.exponentialRampToValueAtTime(0.028 * volScale, now + 0.006);
+      sparkGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+      spark.connect(sparkGain); sparkGain.connect(dest);
+      spark.start(now); spark.stop(now + 0.3);
+    }
+  }
+
+  /* Finale chord when the whole sheet is done. A major-9 spread over an
+     octave and a half, slow bloom, plus a sub swell and a soft noise wash. */
+  function finalChord(){
+    if (!ensureAudio() || muted) return;
+    const now = AC.currentTime;
+    const freqs = [261.63, 329.63, 392.00, 493.88, 587.33, 783.99];
+    freqs.forEach((f, i) => {
+      const o = AC.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const o2 = AC.createOscillator();
+      o2.type = 'triangle';
+      o2.frequency.value = f * 2;
+      o2.detune.value = 6;
+      const g = AC.createGain();
+      const start = now + i * 0.055;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.10, start + 0.10);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 2.4);
+      o.connect(g); o2.connect(g);
+      g.connect(dryBus);
+      const send = AC.createGain(); send.gain.value = .8;
+      g.connect(send); send.connect(reverbIn);
+      o.start(start); o2.start(start);
+      o.stop(start + 2.6); o2.stop(start + 2.6);
+    });
+    // sub swell
+    const sub = AC.createOscillator(); sub.type = 'sine';
+    sub.frequency.setValueAtTime(110, now);
+    sub.frequency.exponentialRampToValueAtTime(55, now + 1.8);
+    const sg = AC.createGain();
+    sg.gain.setValueAtTime(0.0001, now);
+    sg.gain.exponentialRampToValueAtTime(0.24, now + 0.35);
+    sg.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+    sub.connect(sg); sg.connect(dryBus);
+    sub.start(now); sub.stop(now + 2.5);
+    // soft wash
+    const wash = AC.createBufferSource();
+    wash.buffer = noiseBuffer;
+    wash.loop = true;
+    const wf = AC.createBiquadFilter();
+    wf.type = 'lowpass'; wf.frequency.value = 900; wf.Q.value = .7;
+    const wg = AC.createGain();
+    wg.gain.setValueAtTime(0.0001, now);
+    wg.gain.exponentialRampToValueAtTime(0.05, now + 0.5);
+    wg.gain.exponentialRampToValueAtTime(0.0001, now + 2.6);
+    wash.connect(wf); wf.connect(wg); wg.connect(dryBus);
+    const wsend = AC.createGain(); wsend.gain.value = .7;
+    wg.connect(wsend); wsend.connect(reverbIn);
+    wash.start(now); wash.stop(now + 2.8);
+  }
+
+  const paintMute = () => {
+    muteBtn.classList.toggle('off', muted);
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  };
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    try { localStorage.setItem('bubblewrap:muted', muted ? '1' : '0'); } catch(e){}
+    if (ensureAudio()) master.gain.setTargetAtTime(muted ? 0 : .82, AC.currentTime, .05);
+    paintMute();
+  });
+
+  /* ==================== palette ==================== */
+  // anchor hues for the random bubble colours
+  const HUES = [330, 300, 275, 250, 220, 195, 165, 45, 15];
+  function randomHue(){
+    const base = HUES[(Math.random() * HUES.length) | 0];
+    return base + (Math.random() - .5) * 24;
+  }
+
+  /* ==================== sheet construction ==================== */
+  let COLS = 8, ROWS = 6, TOTAL = 0;
+  let poppedCount = 0;
+  let bubbles = [];
+  let combo = 0;
+  let lastPopAt = 0;
+  let comboHideT = 0;
+  let gen = 0;
+  let poppingAll = false;
+
+  const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+
+  function pickGrid(){
+    const availW = Math.min(760, innerWidth - 40);
+    const availH = innerHeight - 220;
+    const target = 70;
+    const maxCols = Math.max(4, Math.floor(availW / target));
+    const maxRows = Math.max(4, Math.floor(availH / target));
+    let cols = randInt(6, Math.min(maxCols, 10));
+    let rows = randInt(4, Math.min(maxRows, 8));
+    // keep total in a satisfying band: 24–72
+    while (cols * rows > 72){
+      if (cols >= rows) cols--; else rows--;
+    }
+    while (cols * rows < 24){
+      if (cols <= rows) cols++; else rows++;
+    }
+    return { cols: Math.max(5, cols), rows: Math.max(4, rows) };
+  }
+
+  function buildSheet(){
+    gen++;
+    poppingAll = false;
+    combo = 0;
+    lastPopAt = 0;
+    comboEl.classList.remove('show');
+    particles.length = 0;
+
+    // rebuild animation
+    sheet.classList.add('rebuilding');
+
+    setTimeout(() => {
+      const { cols, rows } = pickGrid();
+      COLS = cols; ROWS = rows;
+      TOTAL = COLS * ROWS;
+      poppedCount = 0;
+      sheet.innerHTML = '';
+      sheet.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+      sheet.style.width = `min(${COLS * 78 + 36}px, ${innerWidth - 32}px)`;
+
+      bubbles = [];
+      for (let i = 0; i < TOTAL; i++){
+        const b = document.createElement('div');
+        b.className = 'bub';
+        b.dataset.idx = String(i);
+        b.style.setProperty('--h', randomHue().toFixed(0));
+        b.style.setProperty('--s', (62 + Math.random() * 16).toFixed(0) + '%');
+        b.setAttribute('role', 'button');
+        b.setAttribute('aria-label', 'Pop');
+        sheet.appendChild(b);
+        bubbles.push({ el: b, popped: false });
+      }
+
+      hSheet.textContent = '0';
+      hTotal.textContent = String(TOTAL);
+      updateControls();
+      sheet.classList.remove('rebuilding');
+    }, 220);
+  }
+
+  function updateControls(){
+    const left = TOTAL - poppedCount;
+    popAllBtn.classList.toggle('show', left > 0 && !poppingAll);
+    freshBtn.classList.toggle('show', left === 0 && !poppingAll);
+  }
+
+  /* ==================== fx canvas ==================== */
+  let W = 0, H = 0, dpr = 1;
+  function resizeFx(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    fx.width = W * dpr; fx.height = H * dpr;
+    fx.style.width = W + 'px'; fx.style.height = H + 'px';
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener('resize', () => {
+    resizeFx();
+    clearTimeout(resizeFx._t);
+    resizeFx._t = setTimeout(() => {
+      // only rebuild if the layout fundamentally changed
+      const before = COLS * ROWS;
+      const { cols, rows } = pickGrid();
+      if (Math.abs(cols - COLS) > 1 || Math.abs(rows - ROWS) > 1){
+        buildSheet();
+      } else {
+        sheet.style.width = `min(${COLS * 78 + 36}px, ${innerWidth - 32}px)`;
+      }
+    }, 280);
+  });
+  resizeFx();
+
+  let particles = [];
+  function spawnBurst(cx, cy, intensity, hue){
+    if (calm) return;
+    const n = Math.round(10 + 8 * intensity);
+    for (let i = 0; i < n; i++){
+      const a = Math.random() * 6.283;
+      const sp = (1.2 + Math.random() * 3.2) * (0.7 + intensity * 0.6);
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 0.9,
+        life: 1,
+        decay: 0.02 + Math.random() * 0.014,
+        r: 1 + Math.random() * 1.9,
+        hue: hue + (Math.random() - .5) * 30,
+        sat: 70 + Math.random() * 20
+      });
+    }
+  }
+
+  function spawnRipple(cx, cy){
+    if (calm) return;
+    const n = 42;
+    for (let i = 0; i < n; i++){
+      const a = (i / n) * 6.283;
+      const sp = 4 + Math.random() * 2;
+      particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 1,
+        decay: 0.012,
+        r: 2 + Math.random() * 2,
+        hue: 320 + Math.random() * 40,
+        sat: 80
+      });
+    }
+  }
+
+  function frameFx(ts){
+    const dt = Math.min(3, (ts - (frameFx._last || ts)) / 16.667) || 1;
+    frameFx._last = ts;
+    if (particles.length){
+      fctx.clearRect(0, 0, W, H);
+      for (let i = particles.length - 1; i >= 0; i--){
+        const p = particles[i];
+        p.life -= p.decay * dt;
+        if (p.life <= 0){ particles.splice(i, 1); continue; }
+        p.vy += 0.11 * dt;
+        p.vx *= Math.pow(.955, dt);
+        p.vy *= Math.pow(.955, dt);
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        const a = Math.max(0, p.life);
+        const rr = p.r * 3.5;
+        const g = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rr);
+        g.addColorStop(0, `hsla(${p.hue}, ${p.sat}%, 92%, ${a})`);
+        g.addColorStop(0.35, `hsla(${p.hue}, ${p.sat}%, 78%, ${a * 0.55})`);
+        g.addColorStop(1, `hsla(${p.hue}, ${p.sat}%, 78%, 0)`);
+        fctx.fillStyle = g;
+        fctx.beginPath();
+        fctx.arc(p.x, p.y, rr, 0, 6.283);
+        fctx.fill();
+      }
+    } else if (frameFx._dirty){
+      fctx.clearRect(0, 0, W, H);
+      frameFx._dirty = false;
+    }
+    if (particles.length) frameFx._dirty = true;
+    requestAnimationFrame(frameFx);
+  }
+  requestAnimationFrame(frameFx);
+
+  /* ==================== pop handling ==================== */
+  function popBubble(b, bx, by, opts = {}){
+    if (b.popped) return;
+    b.popped = true;
+    poppedCount++;
+
+    const now = performance.now();
+    const useCombo = opts.comboN != null;
+    if (!useCombo){
+      if (now - lastPopAt < 900) combo++;
+      else combo = 1;
+      lastPopAt = now;
+    } else {
+      combo = opts.comboN;
+    }
+
+    // pan based on x position, -1..1
+    const pan = ((bx / W) - 0.5) * 1.4;
+
+    popSound(combo - 1, pan, {
+      bulk: !!opts.bulk,
+      intensity: opts.intensity != null ? opts.intensity : 1,
+      allowThrottle: !opts.bulk
+    });
+
+    // visual pop
+    const el = b.el;
+    el.classList.add('popping');
+    setTimeout(() => { el.classList.add('dead'); }, 200);
+    setTimeout(() => { el.classList.remove('popping'); }, 480);
+
+    const hue = parseFloat(getComputedStyle(el).getPropertyValue('--h')) || 320;
+    const intensity = Math.min(1.6, 0.7 + combo * 0.08);
+    spawnBurst(bx, by, intensity, hue);
+
+    hSheet.textContent = String(poppedCount);
+    allTimeTotal++;
+    hAll.textContent = String(allTimeTotal);
+    saveTotal();
+
+    if (!opts.bulk && combo >= 2){
+      comboEl.textContent = `×${combo}`;
+      comboEl.classList.add('show');
+      comboEl.classList.remove('pump');
+      void comboEl.offsetWidth;
+      comboEl.classList.add('pump');
+      clearTimeout(comboHideT);
+      comboHideT = setTimeout(() => comboEl.classList.remove('show'), 1400);
+    }
+  }
+
+  sheet.addEventListener('pointerdown', e => {
+    if (poppingAll) return;
+    const el = e.target.closest('.bub');
+    if (!el) return;
+    if (el.classList.contains('dead')) return;
+    e.preventDefault();
+    const b = bubbles[Number(el.dataset.idx)];
+    if (!b) return;
+    const r = el.getBoundingClientRect();
+    const bx = r.left + r.width / 2;
+    const by = r.top + r.height / 2;
+    popBubble(b, bx, by);
+  });
+
+  /* ==================== pop all ==================== */
+  popAllBtn.addEventListener('click', () => {
+    if (poppingAll) return;
+    const alive = [];
+    if (poppedCount >= TOTAL) return;
+
+    poppingAll = true;
+    updateControls();
+
+    const myGen = gen;
+    const sr = sheet.getBoundingClientRect();
+    const cx = sr.left + sr.width / 2;
+    const cy = sr.top + sr.height / 2;
+
+    // collect and sort by distance from sheet center
+    for (let i = 0; i < bubbles.length; i++){
+      const b = bubbles[i];
+      if (b.popped) continue;
+      const r = b.el.getBoundingClientRect();
+      const bx = r.left + r.width / 2;
+      const by = r.top + r.height / 2;
+      const d = Math.hypot(bx - cx, by - cy);
+      alive.push({ b, bx, by, d });
+    }
+    alive.sort((a, b) => a.d - b.d);
+
+    // stagger — each next pop a beat after the previous, with a slight
+    // accelerating cadence that then eases out
+    const n = alive.length;
+    const baseStagger = 22;
+    alive.forEach((item, i) => {
+      // ease: starts a touch slower, tightens through the middle
+      const t = i / Math.max(1, n - 1);
+      const ease = t < .5 ? t * 1.3 : (1 - (1 - t) * 0.7);
+      const delay = i * baseStagger * (0.8 + ease * 0.4);
+      setTimeout(() => {
+        if (myGen !== gen) return;
+        if (item.b.popped) return;
+        popBubble(item.b, item.bx, item.by, { bulk: true, comboN: i + 1 });
+      }, delay);
+    });
+
+    // ripple from center
+    spawnRipple(cx, cy);
+
+    const totalTime = n * baseStagger + 400;
+    setTimeout(() => {
+      if (myGen !== gen) return;
+      poppingAll = false;
+      if (poppedCount >= TOTAL){
+        finalChord();
+      }
+      updateControls();
+    }, totalTime);
+  });
+
+  /* ==================== fresh sheet ==================== */
+  freshBtn.addEventListener('click', () => {
+    buildSheet();
+  });
+
+  /* ==================== boot ==================== */
+  paintMute();
+  buildSheet();
+})();
+</script>
+</body>
+</html>

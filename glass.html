@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Pane of Glass</title>
+<meta name="description" content="Pick a shape. Swing the hammer. Watch it fall, then rise.">
+<meta name="theme-color" content="#0c1016">
+<style>
+:root{--ink:#e0e6f0;--mute:#8895a8;--dim:#5a6474;--line:rgba(200,215,235,.16);--accent:200,215,235}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:radial-gradient(70% 50% at 50% 40%,#151b25,#0c1016 80%);
+  color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;
+}
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
+  touch-action:none;cursor:pointer}
+.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  background:rgba(20,26,36,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s}
+.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
+  background:rgba(20,26,36,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s}
+.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute svg{width:16px;height:16px}
+.mute .m{display:block}.mute .x{display:none}
+.mute.off .m{display:none}.mute.off .x{display:block}
+
+.shapes{
+  position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);
+  left:50%;transform:translateX(-50%);
+  z-index:4;
+  display:flex;gap:4px;
+  padding:5px;border-radius:999px;
+  background:rgba(20,26,36,.55);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--line);
+  transition:opacity .35s ease;
+}
+.shapes[data-locked="true"]{
+  opacity:.35;pointer-events:none;
+}
+.shape-btn{
+  width:34px;height:34px;
+  border-radius:999px;
+  display:grid;place-items:center;
+  background:none;border:1px solid transparent;
+  color:var(--mute);cursor:pointer;
+  padding:0;margin:0;
+  transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
+}
+.shape-btn:hover{color:var(--ink);border-color:rgba(var(--accent),.3);background:rgba(var(--accent),.06)}
+.shape-btn.active{
+  color:var(--ink);
+  border-color:rgba(var(--accent),.55);
+  background:rgba(var(--accent),.14);
+  box-shadow:0 0 12px rgba(var(--accent),.25);
+}
+.shape-btn svg{width:18px;height:18px;display:block}
+
+.hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);
+  transform:translateX(-50%);
+  z-index:1;color:var(--dim);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  font-style:italic;pointer-events:none;transition:opacity .6s ease;text-align:center;
+  padding:0 20px;line-height:1.9}
+.hint.fade{opacity:0}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+<button class="mute" id="mute" aria-label="Mute sound" aria-pressed="false">
+  <svg class="m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+    <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>
+  </svg>
+  <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+    <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+  </svg>
+</button>
+
+<div class="shapes" id="shapes" role="radiogroup" aria-label="Glass shape">
+  <button class="shape-btn active" data-shape="square" role="radio" aria-checked="true" aria-label="Square">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
+  </button>
+  <button class="shape-btn" data-shape="circle" role="radio" aria-checked="false" aria-label="Circle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/></svg>
+  </button>
+  <button class="shape-btn" data-shape="diamond" role="radio" aria-checked="false" aria-label="Diamond">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/></svg>
+  </button>
+  <button class="shape-btn" data-shape="hexagon" role="radio" aria-checked="false" aria-label="Hexagon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5 19.5 7.75v8.5L12 20.5 4.5 16.25v-8.5z"/></svg>
+  </button>
+  <button class="shape-btn" data-shape="triangle" role="radio" aria-checked="false" aria-label="Triangle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5 21 19.5H3z"/></svg>
+  </button>
+  <button class="shape-btn" data-shape="star" role="radio" aria-checked="false" aria-label="Star">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 3.2 14.7 9.6 21.6 10.2 16.4 14.7 17.9 21.4 12 17.9 6.1 21.4 7.6 14.7 2.4 10.2 9.3 9.6z"/></svg>
+  </button>
+</div>
+
+<p class="hint" id="hint">Tap the glass</p>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cv = $('#c'), ctx = cv.getContext('2d');
+  const hint = $('#hint');
+  const muteBtn = $('#mute');
+  const shapesEl = $('#shapes');
+  const shapeBtns = [...document.querySelectorAll('.shape-btn')];
+
+  /* ==================== canvas ==================== */
+  let W = 0, H = 0, dpr = 1;
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    computePane();
+    gradientsDirty = true;
+  }
+  addEventListener('resize', resize);
+
+  /* ==================== shapes ==================== */
+  const SHAPES = {
+    square: { verts: [ {x:-1,y:-1}, {x:1,y:-1}, {x:1,y:1}, {x:-1,y:1} ] },
+    circle: { verts: (() => {
+      const arr = [];
+      for (let i = 0; i < 48; i++){
+        const a = (i / 48) * Math.PI * 2;
+        arr.push({ x: Math.cos(a), y: Math.sin(a) });
+      }
+      return arr;
+    })() },
+    diamond: { verts: [ {x:0,y:-1}, {x:1,y:0}, {x:0,y:1}, {x:-1,y:0} ] },
+    hexagon: { verts: (() => {
+      const arr = [];
+      for (let i = 0; i < 6; i++){
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
+        arr.push({ x: Math.cos(a), y: Math.sin(a) });
+      }
+      return arr;
+    })() },
+    triangle: { verts: [ {x:0,y:-1}, {x:0.9,y:0.8}, {x:-0.9,y:0.8} ] },
+    star: { verts: (() => {
+      const arr = [];
+      for (let i = 0; i < 10; i++){
+        const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+        const r = i % 2 === 0 ? 1 : 0.44;
+        arr.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+      }
+      return arr;
+    })() }
+  };
+  let currentShape = 'square';
+
+  /* ==================== pane geometry ==================== */
+  const pane = { x: 0, y: 0, w: 0, h: 0 };
+  const FLOOR_MARGIN = 90;
+  function computePane(){
+    const floorYv = H - FLOOR_MARGIN;
+    const topMargin = 130;
+    const bottomMargin = 130;
+    const availH = floorYv - topMargin - bottomMargin;
+    const availW = W - 100;
+    const size = Math.max(150, Math.min(availW, availH, 460));
+    pane.w = size;
+    pane.h = size;
+    pane.x = (W - pane.w) / 2;
+    pane.y = topMargin + (availH - pane.h) / 2;
+  }
+  function floorY(){ return H - FLOOR_MARGIN; }
+
+  function shapeVertsScreen(){
+    const s = Math.min(pane.w, pane.h) / 2;
+    const cx = pane.x + pane.w / 2;
+    const cy = pane.y + pane.h / 2;
+    return SHAPES[currentShape].verts.map(v => ({ x: cx + v.x * s, y: cy + v.y * s }));
+  }
+
+  /* ==================== polygon helpers ==================== */
+  /* Returns the FIRST polygon edge hit by a ray from (ox, oy) at `angle`,
+     along with the edge index and the fraction along that edge. */
+  function rayHitEdgeDetailed(ox, oy, angle, verts){
+    const dx = Math.cos(angle), dy = Math.sin(angle);
+    let best = null;
+    for (let i = 0; i < verts.length; i++){
+      const v1 = verts[i];
+      const v2 = verts[(i + 1) % verts.length];
+      const ax = v2.x - v1.x, ay = v2.y - v1.y;
+      const cx = v1.x - ox, cy = v1.y - oy;
+      const det = -dx * ay + ax * dy;
+      if (Math.abs(det) < 1e-9) continue;
+      const t = (-cx * ay + ax * cy) / det;
+      const u = (dx * cy - cx * dy) / det;
+      if (t > 1e-6 && u >= -0.0001 && u <= 1.0001){
+        const uc = Math.max(0, Math.min(1, u));
+        if (!best || t < best.tDist){
+          best = { edgeIdx: i, edgeT: uc, tDist: t, x: ox + dx * t, y: oy + dy * t };
+        }
+      }
+    }
+    return best;
+  }
+
+  // simple first-hit point (used by crack rays)
+  function rayToPolyEdge(ox, oy, angle, verts){
+    const h = rayHitEdgeDetailed(ox, oy, angle, verts);
+    if (h) return { x: h.x, y: h.y };
+    return { x: ox, y: oy };
+  }
+
+  function pointInPoly(px, py, verts){
+    let inside = false;
+    for (let i = 0, j = verts.length - 1; i < verts.length; j = i++){
+      const xi = verts[i].x, yi = verts[i].y;
+      const xj = verts[j].x, yj = verts[j].y;
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)){
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  /* ==================== audio ==================== */
+  let AC = null, master = null, reverbIn = null, noiseBuffer = null;
+  let muted = false;
+  try { muted = localStorage.getItem('glass:muted') === '1'; } catch(e){}
+
+  function makeImpulse(c, duration, decay){
+    const rate = c.sampleRate;
+    const len = Math.max(1, Math.floor(rate * duration));
+    const ir = c.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++){
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++){
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
+    return ir;
+  }
+
+  function ensureAudio(){
+    if (!AC){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch(e){ return false; }
+
+      master = AC.createGain();
+      master.gain.value = muted ? 0 : .7;
+      master.connect(AC.destination);
+
+      const comp = AC.createDynamicsCompressor();
+      comp.threshold.value = -18;
+      comp.knee.value = 24;
+      comp.ratio.value = 6;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.25;
+      comp.connect(master);
+
+      const dryBus = AC.createGain();
+      dryBus.gain.value = 1;
+      dryBus.connect(comp);
+
+      const conv = AC.createConvolver();
+      conv.buffer = makeImpulse(AC, 1.6, 2.1);
+      const wet = AC.createGain();
+      wet.gain.value = 0.32;
+      reverbIn = AC.createGain();
+      reverbIn.gain.value = 1;
+      reverbIn.connect(conv);
+      conv.connect(wet);
+      wet.connect(comp);
+      master._dry = dryBus;
+
+      const nb = AC.createBuffer(1, Math.ceil(AC.sampleRate * 1.0), AC.sampleRate);
+      const nd = nb.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      noiseBuffer = nb;
+    }
+    if (AC.state !== 'running') AC.resume().catch(()=>{});
+    return true;
+  }
+  function busIn(){ return master._dry; }
+
+  function playCrack(t, intensity){
+    if (!AC || !noiseBuffer) return;
+    const src = AC.createBufferSource(); src.buffer = noiseBuffer;
+    const hp = AC.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3200; hp.Q.value = .6;
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 12000;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.7 * intensity, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    src.connect(hp); hp.connect(lp); lp.connect(g);
+    g.connect(busIn());
+    const send = AC.createGain(); send.gain.value = .5;
+    g.connect(send); send.connect(reverbIn);
+    src.start(t); src.stop(t + 0.15);
+  }
+  function playSubThud(t, intensity){
+    if (!AC) return;
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(38, t + 0.22);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.34 * intensity, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+    o.connect(g); g.connect(busIn());
+    o.start(t); o.stop(t + 0.4);
+  }
+  function playHammerWhoosh(t){
+    if (!AC || !noiseBuffer) return;
+    const src = AC.createBufferSource(); src.buffer = noiseBuffer;
+    const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 600; bp.Q.value = 1.6;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    src.connect(bp); bp.connect(g); g.connect(busIn());
+    src.start(t); src.stop(t + 0.28);
+  }
+  function playGlassTinkle(t, freq, vol){
+    if (!AC) return;
+    const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = freq;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2.01;
+    const o3 = AC.createOscillator(); o3.type = 'triangle'; o3.frequency.value = freq * 3.04;
+    const g1 = AC.createGain(); g1.gain.value = 1;
+    const g2 = AC.createGain(); g2.gain.value = .55;
+    const g3 = AC.createGain(); g3.gain.value = .18;
+    const g = AC.createGain();
+    const dur = 0.4 + Math.random() * 0.5;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o1.connect(g1); g1.connect(g);
+    o2.connect(g2); g2.connect(g);
+    o3.connect(g3); g3.connect(g);
+    g.connect(busIn());
+    const send = AC.createGain(); send.gain.value = 1.1;
+    g.connect(send); send.connect(reverbIn);
+    o1.start(t); o2.start(t); o3.start(t);
+    o1.stop(t + dur + .2); o2.stop(t + dur + .2); o3.stop(t + dur + .2);
+  }
+  function playGlassClink(t, freq){
+    if (!AC) return;
+    const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = freq;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 1.99;
+    const o3 = AC.createOscillator(); o3.type = 'triangle'; o3.frequency.value = freq * 3.5;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.20);
+    const g1 = AC.createGain(); g1.gain.value = 1;
+    const g2 = AC.createGain(); g2.gain.value = .4;
+    const g3 = AC.createGain(); g3.gain.value = .12;
+    o1.connect(g1); g1.connect(g);
+    o2.connect(g2); g2.connect(g);
+    o3.connect(g3); g3.connect(g);
+    g.connect(busIn());
+    const send = AC.createGain(); send.gain.value = .7;
+    g.connect(send); send.connect(reverbIn);
+    o1.start(t); o2.start(t); o3.start(t);
+    o1.stop(t + .25); o2.stop(t + .25); o3.stop(t + .25);
+  }
+  function playReassemblySwell(){
+    if (!AC) return;
+    const t = AC.currentTime;
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(440, t + 1.2);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.04, t + 1.0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+    o.connect(g); g.connect(busIn());
+    const send = AC.createGain(); send.gain.value = 1.4;
+    g.connect(send); send.connect(reverbIn);
+    o.start(t); o.stop(t + 2.0);
+  }
+  function playFinishSettle(){
+    if (!AC) return;
+    const t = AC.currentTime;
+    [523.25, 659.25, 783.99].forEach((f, i) => {
+      const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+      const g = AC.createGain();
+      const start = t + i * 0.06;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.09, start + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 1.6);
+      o.connect(g); g.connect(busIn());
+      const send = AC.createGain(); send.gain.value = 1.3;
+      g.connect(send); send.connect(reverbIn);
+      o.start(start); o.stop(start + 1.8);
+    });
+  }
+
+  const paintMute = () => {
+    muteBtn.classList.toggle('off', muted);
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  };
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    try { localStorage.setItem('glass:muted', muted ? '1' : '0'); } catch(e){}
+    if (ensureAudio()) master.gain.setTargetAtTime(muted ? 0 : .7, AC.currentTime, .05);
+    paintMute();
+  });
+
+  /* ==================== state ==================== */
+  let state = 'intact';
+  let stateT = 0;
+  let impact = null;
+  let shards = [];
+  let crackRays = [];
+  let glints = [];
+  let shockwave = null;
+  let healingGlow = 0;
+  let pendingTinkles = [];
+  let hammer = null;
+
+  const DUR = {
+    cracking: 280,
+    settleDelay: 480,
+    reassembleGap: 110,
+    reassembleDur: 420,
+    healing: 600,
+    shatterMax: 2200
+  };
+
+  /* ==================== shard geometry ==================== */
+  function buildShards(ix, iy){
+    const verts = shapeVertsScreen();
+    const N = 12 + Math.floor(Math.random() * 6);
+    const angles = [];
+    for (let i = 0; i < N; i++){
+      angles.push((i / N) * Math.PI * 2 + (Math.random() - .5) * 0.18);
+    }
+    angles.sort((a, b) => a - b);
+
+    /* Find the first polygon edge hit by each ray. */
+    const hits = angles.map(a => rayHitEdgeDetailed(ix, iy, a, verts));
+    // fallback if a ray missed (shouldn't happen with impact inside a star-shaped region)
+    for (let i = 0; i < N; i++){
+      if (!hits[i]){
+        const a = angles[i];
+        let bestV = verts[0], bestDot = -Infinity;
+        for (const v of verts){
+          const dx = v.x - ix, dy = v.y - iy;
+          const d = Math.hypot(dx, dy) || 1;
+          const dot = (dx * Math.cos(a) + dy * Math.sin(a)) / d;
+          if (dot > bestDot){ bestDot = dot; bestV = v; }
+        }
+        hits[i] = { edgeIdx: 0, edgeT: 0.5, tDist: 1, x: bestV.x, y: bestV.y };
+      }
+    }
+
+    /* Midpoints: a random point along each ray, closer in than the boundary. */
+    const mids = angles.map((a, i) => {
+      const h = hits[i];
+      const d = Math.hypot(h.x - ix, h.y - iy);
+      const r = 0.30 + Math.random() * 0.34;
+      return { x: ix + Math.cos(a) * d * r, y: iy + Math.sin(a) * d * r };
+    });
+
+    shards = [];
+    for (let i = 0; i < N; i++){
+      const p0 = hits[i];
+      const p1 = hits[(i + 1) % N];
+      const m0 = mids[i];
+      const m1 = mids[(i + 1) % N];
+
+      /* THE FIX:
+         Walk the polygon boundary from p0 to p1, collecting every intermediate
+         vertex. This makes the shard's outer edge trace the exact silhouette of
+         the shape, instead of cutting a straight chord across it. */
+      const outerPath = [ { x: p0.x, y: p0.y } ];
+      let e = p0.edgeIdx;
+      const e1 = p1.edgeIdx;
+      let safety = 0;
+      while (e !== e1 && safety++ <= verts.length){
+        e = (e + 1) % verts.length;
+        outerPath.push({ x: verts[e].x, y: verts[e].y });
+      }
+      outerPath.push({ x: p1.x, y: p1.y });
+
+      /* Full shard polygon: impact → m0 → outer silhouette → m1 → impact. */
+      const pts = [ { x: ix, y: iy }, m0, ...outerPath, m1 ];
+
+      let sx = 0, sy = 0;
+      for (const p of pts){ sx += p.x; sy += p.y; }
+      const c = { x: sx / pts.length, y: sy / pts.length };
+      const dist = Math.hypot(c.x - ix, c.y - iy);
+
+      const path = new Path2D();
+      path.moveTo(pts[0].x, pts[0].y);
+      for (let k = 1; k < pts.length; k++) path.lineTo(pts[k].x, pts[k].y);
+      path.closePath();
+
+      const tint = Math.random() * 20 - 10;
+      const rC = Math.max(0, Math.min(255, Math.round(195 + tint)));
+      const gC = Math.max(0, Math.min(255, Math.round(215 + tint * .7)));
+      const bC = Math.max(0, Math.min(255, Math.round(240 + tint * .4)));
+      const fillColor = `rgba(${rC},${gC},${bC},0.32)`;
+
+      shards.push({
+        path, fillColor,
+        homeX: c.x, homeY: c.y,
+        pos: { x: c.x, y: c.y },
+        rot: 0,
+        vel: { x: 0, y: 0 },
+        velRot: 0,
+        dist,
+        sState: 'idle',
+        returnStart: 0,
+        returnDur: 0,
+        returnFrom: null,
+        flash: 0,
+        queueIdx: 0,
+        restY: 0
+      });
+    }
+  }
+
+  /* ==================== hammer ==================== */
+  function beginHammer(ix, iy){
+    hammer = {
+      startT: performance.now(),
+      impactX: ix,
+      impactY: iy,
+      handX: ix,
+      handY: iy - 180,
+      handleLen: 180,
+      angFrom: -2.15,
+      angTo: 0,
+      strikeDur: 240,
+      recoilDur: 320,
+      ang: -2.15,
+      alpha: 1,
+      hit: false,
+      done: false
+    };
+    if (AC && !muted) playHammerWhoosh(AC.currentTime);
+    state = 'hammering';
+    stateT = performance.now();
+  }
+
+  function updateHammer(){
+    if (!hammer || hammer.done) return;
+    const t = performance.now() - hammer.startT;
+    if (t < hammer.strikeDur){
+      const k = t / hammer.strikeDur;
+      const e = k * k;
+      hammer.ang = hammer.angFrom + (hammer.angTo - hammer.angFrom) * e;
+    } else if (!hammer.hit){
+      hammer.hit = true;
+      hammer.ang = hammer.angTo;
+      onHammerHit(hammer.impactX, hammer.impactY);
+    } else if (t < hammer.strikeDur + hammer.recoilDur){
+      const k = (t - hammer.strikeDur) / hammer.recoilDur;
+      const e = 1 - Math.pow(1 - k, 2);
+      hammer.ang = hammer.angTo + (hammer.angFrom - hammer.angTo) * e * 0.5;
+      hammer.alpha = 1 - k * 0.7;
+    } else {
+      hammer.done = true;
+      hammer = null;
+    }
+  }
+
+  function drawHammer(){
+    if (!hammer) return;
+    ctx.save();
+    ctx.globalAlpha = hammer.alpha;
+    ctx.translate(hammer.handX, hammer.handY);
+    ctx.rotate(hammer.ang);
+
+    const handleGrad = ctx.createLinearGradient(-6, 0, 6, 0);
+    handleGrad.addColorStop(0, '#2a1a0a');
+    handleGrad.addColorStop(0.5, '#8a6a3a');
+    handleGrad.addColorStop(1, '#2a1a0a');
+    ctx.fillStyle = handleGrad;
+    roundRectPath(-5, -10, 10, hammer.handleLen + 20, 4);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(20,12,6,0.5)';
+    roundRectPath(-5, 0, 10, 30, 3);
+    ctx.fill();
+
+    const headY = hammer.handleLen;
+    const headGrad = ctx.createLinearGradient(0, headY - 18, 0, headY + 18);
+    headGrad.addColorStop(0, '#dce4ee');
+    headGrad.addColorStop(0.4, '#8a94a0');
+    headGrad.addColorStop(1, '#3a424e');
+    ctx.fillStyle = headGrad;
+    roundRectPath(-32, headY - 17, 64, 34, 6);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    roundRectPath(-32, headY - 17, 64, 34, 6);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(-28, headY - 13, 56, 3);
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, headY - 14);
+    ctx.lineTo(0, headY + 14);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function roundRectPath(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /* ==================== transitions ==================== */
+  function onHammerHit(ix, iy){
+    impact = { x: ix, y: iy };
+    ensureAudio();
+    if (AC && !muted){
+      const t = AC.currentTime;
+      playSubThud(t, 1);
+      playCrack(t + 0.005, 1);
+    }
+
+    const verts = shapeVertsScreen();
+    crackRays = [];
+    const rayN = 8 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < rayN; i++){
+      const a = (i / rayN) * Math.PI * 2 + (Math.random() - .5) * 0.4;
+      const edge = rayToPolyEdge(ix, iy, a, verts);
+      const segN = 6 + Math.floor(Math.random() * 4);
+      const pts = [];
+      for (let j = 0; j <= segN; j++){
+        const frac = j / segN;
+        pts.push({
+          x: ix + (edge.x - ix) * frac + (Math.random() - .5) * 6 * frac,
+          y: iy + (edge.y - iy) * frac + (Math.random() - .5) * 6 * frac
+        });
+      }
+      pts[pts.length - 1] = edge;
+      crackRays.push({ pts, born: performance.now() + i * 10 });
+    }
+
+    glints = [];
+    for (let i = 0; i < 18; i++){
+      const a = Math.random() * Math.PI * 2;
+      const sp = 0.8 + Math.random() * 2.2;
+      glints.push({
+        x: ix, y: iy,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 1,
+        decay: 0.04 + Math.random() * 0.02
+      });
+    }
+
+    buildShards(ix, iy);
+    state = 'cracking';
+    stateT = performance.now();
+  }
+
+  function beginShatter(){
+    state = 'shattering';
+    stateT = performance.now();
+    const ix = impact.x, iy = impact.y;
+    const fy = floorY();
+
+    for (const s of shards){
+      s.sState = 'flying';
+      const dx = s.homeX - ix, dy = s.homeY - iy;
+      const d = Math.hypot(dx, dy) || 1;
+      const nd = Math.min(1, d / 260);
+      const speed = 4.5 + Math.random() * 3.5 + (1 - nd) * 5.5;
+      s.vel.x = dx / d * speed + (Math.random() - .5) * 2;
+      s.vel.y = dy / d * speed * 0.55 - 2.2 - Math.random() * 2;
+      s.velRot = (Math.random() - .5) * 0.24;
+      s.restY = fy - 6 - Math.random() * 14;
+    }
+
+    shockwave = { x: ix, y: iy, r: 8, maxR: Math.max(W, H) * 0.7, life: 1 };
+
+    pendingTinkles = [];
+    if (AC && !muted){
+      const nT = 11 + Math.floor(Math.random() * 6);
+      for (let i = 0; i < nT; i++){
+        const delayMs = (0.05 + Math.random() * 1.3) * 1000;
+        const freq = 1400 + Math.random() * 2800;
+        const vol = 0.05 + Math.random() * 0.07;
+        const h = setTimeout(() => {
+          if (AC && !muted) playGlassTinkle(AC.currentTime, freq, vol);
+        }, delayMs);
+        pendingTinkles.push(h);
+      }
+      for (let i = 0; i < 6; i++){
+        const delayMs = (0.55 + Math.random() * 0.8) * 1000;
+        const h = setTimeout(() => {
+          if (AC && !muted){
+            const t = AC.currentTime;
+            const o = AC.createOscillator(); o.type = 'sine';
+            o.frequency.setValueAtTime(110, t);
+            o.frequency.exponentialRampToValueAtTime(55, t + 0.14);
+            const g = AC.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(0.06, t + 0.006);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+            o.connect(g); g.connect(busIn());
+            o.start(t); o.stop(t + 0.28);
+          }
+        }, delayMs);
+        pendingTinkles.push(h);
+      }
+    }
+  }
+
+  function clearPendingTinkles(){
+    for (const h of pendingTinkles) clearTimeout(h);
+    pendingTinkles = [];
+  }
+
+  function beginReassembly(){
+    state = 'reassembling';
+    stateT = performance.now();
+    if (AC && !muted) playReassemblySwell();
+    const ordered = shards.slice().sort((a, b) => b.dist - a.dist);
+    ordered.forEach((s, i) => {
+      s.sState = 'queued';
+      s.queueIdx = i;
+    });
+    shards._ordered = ordered;
+    shards._nextIdx = 0;
+    shards._nextStart = performance.now() + 260;
+  }
+
+  function beginHealing(){
+    state = 'healing';
+    stateT = performance.now();
+    healingGlow = 1;
+    if (AC && !muted) playFinishSettle();
+  }
+
+  function beginIntact(){
+    state = 'intact';
+    stateT = performance.now();
+    impact = null;
+    shards = [];
+    crackRays = [];
+    glints = [];
+    shockwave = null;
+    clearPendingTinkles();
+    hint.classList.remove('fade');
+    shapesEl.dataset.locked = 'false';
+  }
+
+  /* ==================== update ==================== */
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeInOutCubic = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  function update(dt){
+    const now = performance.now();
+    const since = now - stateT;
+
+    if (shockwave){
+      shockwave.r += (shockwave.maxR - shockwave.r) * 0.14 * dt;
+      shockwave.life -= 0.055 * dt;
+      if (shockwave.life <= 0) shockwave = null;
+    }
+
+    if (state === 'hammering'){
+      updateHammer();
+    }
+
+    else if (state === 'cracking'){
+      updateHammer();
+      for (let i = glints.length - 1; i >= 0; i--){
+        const g = glints[i];
+        g.life -= g.decay * dt;
+        if (g.life <= 0){ glints.splice(i, 1); continue; }
+        g.x += g.vx * dt;
+        g.y += g.vy * dt;
+        g.vx *= 0.9;
+        g.vy *= 0.9;
+      }
+      if (since >= DUR.cracking) beginShatter();
+    }
+
+    else if (state === 'shattering'){
+      updateHammer();
+      let allSettled = true;
+      const G = 0.45;
+      const fy = floorY();
+
+      for (const s of shards){
+        if (s.sState !== 'flying') continue;
+
+        s.vel.y += G * dt;
+        s.vel.x *= Math.pow(0.995, dt);
+        s.velRot *= Math.pow(0.995, dt);
+
+        s.pos.x += s.vel.x * dt;
+        s.pos.y += s.vel.y * dt;
+        s.rot += s.velRot * dt;
+
+        if (s.pos.y >= s.restY){
+          s.pos.y = s.restY;
+          if (Math.abs(s.vel.y) > 1.1){
+            s.vel.y = -s.vel.y * 0.28;
+            s.vel.x *= 0.72;
+            s.velRot *= 0.6;
+          } else {
+            s.vel.y = 0;
+            s.vel.x *= Math.pow(0.82, dt);
+            s.velRot *= Math.pow(0.75, dt);
+            s.rot += s.vel.x * 0.008 * dt;
+          }
+        }
+
+        if (s.pos.x < 14){ s.pos.x = 14; s.vel.x = Math.abs(s.vel.x) * 0.4; }
+        if (s.pos.x > W - 14){ s.pos.x = W - 14; s.vel.x = -Math.abs(s.vel.x) * 0.4; }
+
+        if (s.pos.y < s.restY - 2 || Math.abs(s.vel.y) > 0.5) allSettled = false;
+        else if (Math.abs(s.vel.x) + Math.abs(s.velRot) * 22 > 0.6) allSettled = false;
+      }
+
+      if (allSettled || since > DUR.shatterMax){
+        for (const s of shards) if (s.sState === 'flying') s.sState = 'resting';
+        state = 'settled';
+        stateT = now;
+      }
+    }
+
+    else if (state === 'settled'){
+      if (since >= DUR.settleDelay) beginReassembly();
+    }
+
+    else if (state === 'reassembling'){
+      const order = shards._ordered;
+      if (order && shards._nextIdx < order.length && now >= shards._nextStart){
+        const s = order[shards._nextIdx];
+        s.sState = 'returning';
+        s.returnStart = now;
+        s.returnDur = DUR.reassembleDur;
+        s.returnFrom = { x: s.pos.x, y: s.pos.y, rot: s.rot };
+        shards._nextIdx++;
+        shards._nextStart = now + DUR.reassembleGap;
+      }
+
+      let allPlaced = true;
+      for (const s of shards){
+        if (s.sState === 'returning'){
+          const t = Math.min(1, (now - s.returnStart) / s.returnDur);
+          const k = easeInOutCubic(t);
+          const arc = Math.sin(k * Math.PI) * 32;
+          s.pos.x = lerp(s.returnFrom.x, s.homeX, k);
+          s.pos.y = lerp(s.returnFrom.y, s.homeY, k) - arc;
+          s.rot = lerp(s.returnFrom.rot, 0, k);
+          if (t >= 1){
+            s.sState = 'placed';
+            s.flash = 1;
+            if (AC && !muted){
+              const scale = [1568, 1760, 1976, 2349, 2637, 3136, 3520, 3951, 4699, 5274];
+              playGlassClink(AC.currentTime, scale[s.queueIdx % scale.length]);
+            }
+          }
+        }
+        if (s.sState !== 'placed' && s.sState !== 'queued') allPlaced = false;
+        if (s.flash > 0) s.flash *= Math.pow(0.85, dt);
+      }
+
+      if (allPlaced && shards._nextIdx >= shards._ordered.length){
+        beginHealing();
+      }
+    }
+
+    else if (state === 'healing'){
+      healingGlow *= Math.pow(0.94, dt);
+      if (since >= DUR.healing) beginIntact();
+    }
+  }
+
+  /* ==================== cached gradients ==================== */
+  let gradientsDirty = true;
+  let gradBg = null, gradFloor = null, gradPane = null, gradSheen = null;
+  function refreshGradients(){
+    gradBg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * .75);
+    gradBg.addColorStop(0, '#171e2b');
+    gradBg.addColorStop(1, '#080b11');
+
+    const fy = floorY();
+    gradFloor = ctx.createLinearGradient(0, fy - 60, 0, fy + 60);
+    gradFloor.addColorStop(0, 'rgba(100,130,180,0)');
+    gradFloor.addColorStop(0.5, 'rgba(100,130,180,0.10)');
+    gradFloor.addColorStop(1, 'rgba(100,130,180,0)');
+
+    gradPane = ctx.createLinearGradient(pane.x, pane.y, pane.x + pane.w, pane.y + pane.h);
+    gradPane.addColorStop(0, 'rgba(180,210,240,.14)');
+    gradPane.addColorStop(.5, 'rgba(220,235,255,.08)');
+    gradPane.addColorStop(1, 'rgba(160,190,225,.12)');
+
+    gradSheen = ctx.createLinearGradient(pane.x, pane.y, pane.x + pane.w, pane.y + pane.h);
+    gradSheen.addColorStop(0, 'rgba(255,255,255,0)');
+    gradSheen.addColorStop(.35, 'rgba(255,255,255,.09)');
+    gradSheen.addColorStop(.5, 'rgba(255,255,255,.14)');
+    gradSheen.addColorStop(.65, 'rgba(255,255,255,.09)');
+    gradSheen.addColorStop(1, 'rgba(255,255,255,0)');
+
+    gradientsDirty = false;
+  }
+
+  /* ==================== drawing ==================== */
+  function drawShapePath(){
+    const verts = shapeVertsScreen();
+    ctx.beginPath();
+    ctx.moveTo(verts[0].x, verts[0].y);
+    for (let i = 1; i < verts.length; i++) ctx.lineTo(verts[i].x, verts[i].y);
+    ctx.closePath();
+  }
+
+  function drawFloor(){
+    const fy = floorY();
+    ctx.fillStyle = gradFloor;
+    ctx.fillRect(0, fy - 60, W, 120);
+    ctx.strokeStyle = 'rgba(140,170,220,0.14)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, fy);
+    ctx.lineTo(W, fy);
+    ctx.stroke();
+  }
+
+  function drawIntactPane(){
+    drawShapePath();
+    ctx.fillStyle = gradPane;
+    ctx.fill();
+
+    ctx.save();
+    drawShapePath();
+    ctx.clip();
+    ctx.fillStyle = gradSheen;
+    ctx.fillRect(pane.x, pane.y, pane.w, pane.h);
+    ctx.restore();
+
+    drawShapePath();
+    ctx.strokeStyle = 'rgba(200,220,245,.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function drawCracks(){
+    const now = performance.now();
+    ctx.lineCap = 'round';
+    for (const ray of crackRays){
+      const age = now - ray.born;
+      if (age < 0) continue;
+      const t = Math.min(1, age / DUR.cracking);
+      const totalPts = ray.pts.length;
+      const visible = 1 + t * (totalPts - 1);
+      const iFull = Math.floor(visible);
+      const frac = visible - iFull;
+
+      ctx.strokeStyle = `rgba(220,235,255,${.65 * t + .3})`;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(ray.pts[0].x, ray.pts[0].y);
+      for (let i = 1; i <= iFull && i < totalPts; i++){
+        ctx.lineTo(ray.pts[i].x, ray.pts[i].y);
+      }
+      if (frac > 0 && iFull + 1 < totalPts){
+        const a = ray.pts[iFull];
+        const b = ray.pts[iFull + 1];
+        ctx.lineTo(a.x + (b.x - a.x) * frac, a.y + (b.y - a.y) * frac);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255,255,255,${.5 * t})`;
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+  }
+
+  function drawGlints(){
+    for (const g of glints){
+      const a = g.life;
+      const rr = 3 + (1 - a) * 5;
+      const grd = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, rr);
+      grd.addColorStop(0, `rgba(255,255,255,${a})`);
+      grd.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(g.x - rr, g.y - rr, rr * 2, rr * 2);
+    }
+  }
+
+  function drawShockwave(){
+    if (!shockwave) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(220,235,255,${shockwave.life * 0.75})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(shockwave.x, shockwave.y, shockwave.r, 0, 6.28);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(255,255,255,${shockwave.life * 0.45})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(shockwave.x, shockwave.y, shockwave.r * 0.82, 0, 6.28);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawShards(){
+    for (const s of shards){
+      if (s.sState === 'idle') continue;
+
+      ctx.save();
+      ctx.translate(s.pos.x, s.pos.y);
+      ctx.rotate(s.rot);
+      ctx.translate(-s.homeX, -s.homeY);
+
+      ctx.fillStyle = s.fillColor;
+      ctx.fill(s.path);
+
+      ctx.strokeStyle = s.flash > 0.02
+        ? `rgba(255,255,255,${Math.min(1, 0.5 + s.flash * 0.7)})`
+        : 'rgba(230,240,255,.62)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke(s.path);
+
+      if (s.flash > 0.02){
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = `rgba(220,235,255,${s.flash * 0.5})`;
+        ctx.fill(s.path);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      ctx.restore();
+    }
+  }
+
+  function render(){
+    if (gradientsDirty) refreshGradients();
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.fillStyle = gradBg;
+    ctx.fillRect(0, 0, W, H);
+
+    drawFloor();
+
+    if (state === 'intact' || state === 'hammering'){
+      drawIntactPane();
+    } else if (state === 'cracking'){
+      drawIntactPane();
+      drawCracks();
+      drawGlints();
+    } else if (state === 'shattering' || state === 'settled' || state === 'reassembling'){
+      drawShards();
+      drawShockwave();
+    } else if (state === 'healing'){
+      ctx.save();
+      ctx.globalAlpha = 1 - healingGlow;
+      drawIntactPane();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = healingGlow;
+      drawShards();
+      ctx.restore();
+
+      if (healingGlow > 0.05){
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = healingGlow * 0.35;
+        ctx.fillStyle = 'rgba(220,235,255,1)';
+        drawShapePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    drawHammer();
+  }
+
+  /* ==================== main loop ==================== */
+  let lastFrame = performance.now();
+  function frame(ts){
+    const dt = Math.min(2, (ts - lastFrame) / 16.667) || 1;
+    lastFrame = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  /* ==================== input ==================== */
+  cv.addEventListener('pointerdown', e => {
+    if (state !== 'intact') return;
+    const r = cv.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const verts = shapeVertsScreen();
+    if (!pointInPoly(mx, my, verts)) return;
+    hint.classList.add('fade');
+    shapesEl.dataset.locked = 'true';
+    ensureAudio();
+    beginHammer(mx, my);
+  }, { passive: true });
+
+  /* ==================== shape picker ==================== */
+  shapeBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      if (state !== 'intact') return;
+      currentShape = b.dataset.shape;
+      shapeBtns.forEach(x => {
+        const on = x === b;
+        x.classList.toggle('active', on);
+        x.setAttribute('aria-checked', String(on));
+      });
+      gradientsDirty = true;
+    });
+  });
+
+  /* ==================== boot ==================== */
+  resize();
+  shapesEl.dataset.locked = 'false';
+  paintMute();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

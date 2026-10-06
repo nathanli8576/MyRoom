@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Pillow</title>
+<meta name="description" content="Press into it. Feathers escape. Let go and it breathes back.">
+<meta name="theme-color" content="#150a10">
+<style>
+:root{--ink:#f0e2d8;--mute:#b09888;--dim:#705c52;--line:rgba(230,200,180,.14);--accent:230,200,180}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:
+    radial-gradient(60% 45% at 50% -8%,rgba(200,140,110,.12),transparent 70%),
+    radial-gradient(70% 40% at 50% 110%,rgba(140,80,60,.14),transparent 70%),
+    #150a10;
+  color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
+  touch-action:manipulation}
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
+  touch-action:none;cursor:pointer}
+
+.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  background:rgba(24,14,20,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s}
+.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
+  background:rgba(24,14,20,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s}
+.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute svg{width:16px;height:16px}
+.mute .m{display:block}.mute .x{display:none}
+.mute.off .m{display:none}.mute.off .x{display:block}
+
+/* ===== XP BAR ===== */
+.xpbar{
+  position:fixed;
+  top:calc(env(safe-area-inset-top,0px) + 60px);
+  left:50%;
+  transform:translateX(-50%);
+  z-index:4;
+  display:flex;align-items:center;gap:12px;
+  padding:8px 18px;
+  width:min(380px, calc(100% - 100px));
+  border-radius:999px;
+  background:rgba(30,16,22,.62);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--line);
+  transition:box-shadow .5s ease, border-color .5s ease;
+  pointer-events:none;
+}
+.xpbar .lv{
+  color:var(--mute);
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  font-style:italic;white-space:nowrap;
+}
+.xpbar .lv b{
+  color:var(--ink);font-weight:400;font-style:normal;font-size:15px;
+  display:inline-block;
+  transition:transform .3s ease,color .3s ease;
+  min-width:1.4em;text-align:right;
+}
+.xpbar.pulse .lv b{
+  animation:lvPulse .55s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes lvPulse{
+  0%{transform:scale(1)}
+  45%{transform:scale(1.7);color:#ffe0b0}
+  100%{transform:scale(1)}
+}
+.xpbar .track{
+  flex:1;height:6px;border-radius:999px;
+  background:rgba(255,220,200,.08);
+  overflow:hidden;position:relative;
+}
+.xpbar .fill{
+  position:absolute;inset:0 auto 0 0;width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#c69a6a,#f0d6a6);
+  box-shadow:0 0 10px rgba(255,215,160,.4);
+  transition:width .28s cubic-bezier(.22,1,.36,1),
+             background .3s ease,box-shadow .3s ease;
+}
+.xpbar.near .fill{
+  background:linear-gradient(90deg,#e0a86a,#ffe4b8);
+  box-shadow:0 0 18px rgba(255,220,170,.75);
+}
+.xpbar.levelup{
+  border-color:rgba(255,220,160,.6);
+  box-shadow:
+    0 0 24px rgba(255,210,150,.55),
+    0 0 60px rgba(255,190,130,.28);
+}
+.xpbar.levelup .fill{
+  background:linear-gradient(90deg,#ffe9b8,#fff8e8);
+  box-shadow:0 0 26px rgba(255,240,200,1);
+}
+.xpbar .count{
+  color:var(--mute);
+  font-size:11px;font-variant-numeric:tabular-nums;
+  min-width:42px;text-align:right;
+  letter-spacing:.04em;
+  transition:color .3s;
+}
+.xpbar.levelup .count{color:#ffe4b8;}
+
+/* ===== PRESSURE SLIDER ===== */
+.pressure{
+  position:fixed;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 26px);
+  left:50%;
+  transform:translateX(-50%);
+  z-index:4;
+  display:flex;align-items:center;gap:12px;
+  padding:8px 20px;
+  width:min(380px, calc(100% - 40px));
+  border-radius:999px;
+  background:rgba(30,16,22,.62);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--line);
+}
+.pressure .plabel{
+  color:var(--dim);
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  font-style:italic;white-space:nowrap;
+}
+.pressure .pval{
+  color:var(--ink);
+  font-size:12px;font-style:italic;font-variant-numeric:tabular-nums;
+  min-width:44px;text-align:right;letter-spacing:.04em;
+  transition:color .2s;
+}
+.pressure input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  flex:1;height:4px;border-radius:999px;
+  background:linear-gradient(90deg,#8a6a5a 0%,#c69a6a 55%,#ffb878 100%);
+  outline:none;cursor:pointer;padding:0;margin:0;
+}
+.pressure input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff4e0,#e0b88a 60%,#8a6a4a);
+  box-shadow:0 0 12px rgba(255,220,160,.6),inset 0 1px 2px rgba(255,255,255,.5);
+  cursor:pointer;
+  transition:box-shadow .2s ease,transform .15s ease;
+}
+.pressure input[type=range]:active::-webkit-slider-thumb{
+  transform:scale(1.15);
+  box-shadow:0 0 20px rgba(255,220,160,1),inset 0 1px 2px rgba(255,255,255,.5);
+}
+.pressure input[type=range]::-moz-range-thumb{
+  width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff4e0,#e0b88a 60%,#8a6a4a);
+  box-shadow:0 0 12px rgba(255,220,160,.6);
+  border:none;cursor:pointer;
+}
+
+.hint{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);
+  transform:translateX(-50%);
+  z-index:1;color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  font-style:italic;pointer-events:none;transition:opacity .8s ease;
+  text-align:center;line-height:1.9;padding:0 20px}
+.hint.fade{opacity:0}
+
+/* level-up flash overlay */
+.flash{
+  position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:radial-gradient(circle at 50% 62%, rgba(255,220,180,.42), rgba(255,220,180,0) 62%);
+  opacity:0;
+  transition:opacity .55s ease;
+}
+.flash.show{
+  opacity:1;
+  transition:opacity .04s ease;
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+<button class="mute" id="mute" aria-label="Mute sound" aria-pressed="false">
+  <svg class="m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+    <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>
+  </svg>
+  <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+    <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+  </svg>
+</button>
+
+<div class="xpbar" id="xpbar" aria-hidden="true">
+  <span class="lv">LV <b id="lvNum">1</b></span>
+  <div class="track"><div class="fill" id="barFill"></div></div>
+  <span class="count" id="xpCount">0 / 12</span>
+</div>
+
+<div class="pressure">
+  <span class="plabel">Soft</span>
+  <input type="range" id="pressureSlider" min="1" max="5" step="0.1" value="1" aria-label="Press intensity">
+  <span class="plabel">Hard</span>
+  <span class="pval" id="pressureVal">1.0×</span>
+</div>
+
+<div class="flash" id="flash" aria-hidden="true"></div>
+<p class="hint" id="hint">Press and hold to squeeze</p>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cv = $('#c'), ctx = cv.getContext('2d');
+  const hint = $('#hint'), muteBtn = $('#mute');
+  const xpbar = $('#xpbar'), lvNum = $('#lvNum'), barFill = $('#barFill'), xpCount = $('#xpCount');
+  const pressureSlider = $('#pressureSlider'), pressureVal = $('#pressureVal');
+  const flash = $('#flash');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==================== canvas ==================== */
+  let W = 0, H = 0, dpr = 1;
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildPillow();
+  }
+  addEventListener('resize', resize);
+
+  /* ==================== audio ==================== */
+  let AC = null, master = null, dryBus = null, reverbIn = null, noiseBuffer = null;
+  let muted = false;
+  try { muted = localStorage.getItem('pillow:muted') === '1'; } catch(e){}
+
+  function makeImpulse(c, duration, decay){
+    const rate = c.sampleRate;
+    const len = Math.max(1, Math.floor(rate * duration));
+    const ir = c.createBuffer(2, len, rate);
+    for (let ch = 0; ch < 2; ch++){
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++){
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
+    return ir;
+  }
+
+  function ensureAudio(){
+    if (!AC){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch(e){ return false; }
+      master = AC.createGain();
+      master.gain.value = muted ? 0 : .7;
+      master.connect(AC.destination);
+      const comp = AC.createDynamicsCompressor();
+      comp.threshold.value = -20;
+      comp.knee.value = 26;
+      comp.ratio.value = 5;
+      comp.attack.value = 0.004;
+      comp.release.value = 0.3;
+      comp.connect(master);
+      dryBus = AC.createGain();
+      dryBus.gain.value = 1;
+      dryBus.connect(comp);
+      const conv = AC.createConvolver();
+      conv.buffer = makeImpulse(AC, 2.4, 1.6);
+      const wet = AC.createGain();
+      wet.gain.value = 0.42;
+      reverbIn = AC.createGain();
+      reverbIn.gain.value = 1;
+      reverbIn.connect(conv);
+      conv.connect(wet);
+      wet.connect(comp);
+      const nb = AC.createBuffer(1, Math.ceil(AC.sampleRate * 1.5), AC.sampleRate);
+      const nd = nb.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      noiseBuffer = nb;
+    }
+    if (AC.state !== 'running') AC.resume().catch(()=>{});
+    return true;
+  }
+
+  let ambient = null, press = null;
+
+  function startAmbient(){
+    if (!AC || ambient) return;
+    const t = AC.currentTime;
+    const g = AC.createGain(); g.gain.value = 0;
+    const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = 55;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = 82.5; o2.detune.value = 6;
+    const o3 = AC.createOscillator(); o3.type = 'sine'; o3.frequency.value = 110; o3.detune.value = -4;
+    const g1 = AC.createGain(); g1.gain.value = .45;
+    const g2 = AC.createGain(); g2.gain.value = .28;
+    const g3 = AC.createGain(); g3.gain.value = .14;
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220; lp.Q.value = .55;
+    o1.connect(g1); o2.connect(g2); o3.connect(g3);
+    g1.connect(lp); g2.connect(lp); g3.connect(lp);
+    lp.connect(g); g.connect(dryBus);
+    const lfo = AC.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.11;
+    const lfoG = AC.createGain(); lfoG.gain.value = 60;
+    lfo.connect(lfoG); lfoG.connect(lp.frequency);
+    o1.start(t); o2.start(t); o3.start(t); lfo.start(t);
+    g.gain.setTargetAtTime(0.05, t, 2.0);
+    ambient = { g, lp, o1, o2, o3, lfo };
+  }
+
+  function startPressDrone(){
+    if (!AC || press) return;
+    const t = AC.currentTime;
+    const g = AC.createGain(); g.gain.value = 0;
+    const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = 65;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = 97.5; o2.detune.value = 5;
+    const o3 = AC.createOscillator(); o3.type = 'triangle'; o3.frequency.value = 130; o3.detune.value = -3;
+    const g1 = AC.createGain(); g1.gain.value = .5;
+    const g2 = AC.createGain(); g2.gain.value = .3;
+    const g3 = AC.createGain(); g3.gain.value = .15;
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400; lp.Q.value = .8;
+    o1.connect(g1); o2.connect(g2); o3.connect(g3);
+    g1.connect(lp); g2.connect(lp); g3.connect(lp);
+    lp.connect(g); g.connect(dryBus);
+    o1.start(t); o2.start(t); o3.start(t);
+    press = { g, lp, o1, o2, o3 };
+  }
+
+  function updatePressDrone(level, mult){
+    if (!AC || !press) return;
+    const t = AC.currentTime;
+    const drive = Math.min(1.4, level * mult * .65);
+    press.g.gain.setTargetAtTime(drive * .2, t, .12);
+    press.lp.frequency.setTargetAtTime(280 + drive * 1100, t, .14);
+    press.o1.frequency.setTargetAtTime(65 + drive * 16, t, .2);
+    press.o2.frequency.setTargetAtTime(97.5 + drive * 24, t, .2);
+    press.o3.frequency.setTargetAtTime(130 + drive * 32, t, .2);
+  }
+
+  function stopPressDrone(){
+    if (!AC || !press) return;
+    const n = press, t = AC.currentTime;
+    press = null;
+    n.g.gain.setTargetAtTime(0, t, .3);
+    setTimeout(() => { try { n.o1.stop(); n.o2.stop(); n.o3.stop(); } catch(e){} }, 1400);
+  }
+
+  function playFlump(intensity){
+    if (!AC) return;
+    const t = AC.currentTime;
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(44, t + .32);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(.34 * intensity, t + .014);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + .58);
+    o.connect(g); g.connect(dryBus);
+    const send = AC.createGain(); send.gain.value = .4;
+    g.connect(send); send.connect(reverbIn);
+    o.start(t); o.stop(t + .7);
+    if (noiseBuffer){
+      const src = AC.createBufferSource(); src.buffer = noiseBuffer;
+      const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 800; bp.Q.value = .7;
+      const ng = AC.createGain();
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(.13 * intensity, t + .012);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + .42);
+      src.connect(bp); bp.connect(ng); ng.connect(dryBus);
+      const send2 = AC.createGain(); send2.gain.value = .5;
+      ng.connect(send2); send2.connect(reverbIn);
+      src.start(t); src.stop(t + .5);
+    }
+  }
+
+  function playFeatherWhoosh(){
+    if (!AC || !noiseBuffer) return;
+    const t = AC.currentTime;
+    const src = AC.createBufferSource(); src.buffer = noiseBuffer;
+    const bp = AC.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2400 + Math.random() * 1400;
+    bp.Q.value = 1.2;
+    const g = AC.createGain();
+    const dur = .32 + Math.random() * .22;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(.038, t + .05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(bp); bp.connect(g); g.connect(dryBus);
+    const send = AC.createGain(); send.gain.value = .8;
+    g.connect(send); send.connect(reverbIn);
+    src.start(t); src.stop(t + dur + .1);
+  }
+
+  function playFeatherChime(){
+    if (!AC) return;
+    const t = AC.currentTime;
+    const scale = [1046.5, 1318.5, 1568, 1975.5, 2349.3, 2637];
+    const f = scale[(Math.random() * scale.length) | 0];
+    const o = AC.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2.01;
+    const g = AC.createGain();
+    const g2 = AC.createGain(); g2.gain.value = .35;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(.028, t + .02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    o.connect(g); o2.connect(g2); g2.connect(g);
+    g.connect(dryBus);
+    const send = AC.createGain(); send.gain.value = 1.0;
+    g.connect(send); send.connect(reverbIn);
+    o.start(t); o.stop(t + 1.6);
+    o2.start(t); o2.stop(t + 1.6);
+  }
+
+  // Level up: sub drop + rising major arpeggio with a bright bell shimmer
+  function playLevelUpSound(level){
+    if (!AC) return;
+    const t = AC.currentTime;
+
+    // sub drop
+    const sub = AC.createOscillator(); sub.type = 'sine';
+    sub.frequency.setValueAtTime(90, t);
+    sub.frequency.exponentialRampToValueAtTime(42, t + .45);
+    const sg = AC.createGain();
+    sg.gain.setValueAtTime(0.0001, t);
+    sg.gain.exponentialRampToValueAtTime(.22, t + .012);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + .8);
+    sub.connect(sg); sg.connect(dryBus);
+    const ssend = AC.createGain(); ssend.gain.value = .4;
+    sg.connect(ssend); ssend.connect(reverbIn);
+    sub.start(t); sub.stop(t + 1);
+
+    // rising bell arpeggio (C major spread)
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    notes.forEach((f, i) => {
+      const start = t + 0.03 + i * 0.085;
+      const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+      const o2 = AC.createOscillator(); o2.type = 'triangle'; o2.frequency.value = f * 2.005;
+      const o2g = AC.createGain(); o2g.gain.value = .32;
+      const g = AC.createGain();
+      const peak = .085 - i * .008;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(Math.max(.015, peak), start + .015);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 1.3);
+      o1.connect(g); o2.connect(o2g); o2g.connect(g);
+      g.connect(dryBus);
+      const send = AC.createGain(); send.gain.value = 1.2;
+      g.connect(send); send.connect(reverbIn);
+      o1.start(start); o1.stop(start + 1.5);
+      o2.start(start); o2.stop(start + 1.5);
+    });
+
+    // a little shimmer layer at the very top
+    const shim = AC.createOscillator(); shim.type = 'sine';
+    shim.frequency.setValueAtTime(2637, t + .45);
+    shim.frequency.exponentialRampToValueAtTime(3520, t + .9);
+    const shimG = AC.createGain();
+    shimG.gain.setValueAtTime(0.0001, t + .45);
+    shimG.gain.exponentialRampToValueAtTime(.03, t + .55);
+    shimG.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    shim.connect(shimG); shimG.connect(dryBus);
+    const shimSend = AC.createGain(); shimSend.gain.value = 1.4;
+    shimG.connect(shimSend); shimSend.connect(reverbIn);
+    shim.start(t + .45); shim.stop(t + 1.6);
+
+    // tiny sparkle noise
+    if (noiseBuffer){
+      const src = AC.createBufferSource(); src.buffer = noiseBuffer;
+      const hp = AC.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000;
+      const ng = AC.createGain();
+      ng.gain.setValueAtTime(0.0001, t + .1);
+      ng.gain.exponentialRampToValueAtTime(.025, t + .3);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+      src.connect(hp); hp.connect(ng); ng.connect(dryBus);
+      const send = AC.createGain(); send.gain.value = 1.5;
+      ng.connect(send); send.connect(reverbIn);
+      src.start(t + .1); src.stop(t + 1.4);
+    }
+  }
+
+  const paintMute = () => {
+    muteBtn.classList.toggle('off', muted);
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  };
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    try { localStorage.setItem('pillow:muted', muted ? '1' : '0'); } catch(e){}
+    if (ensureAudio()){
+      master.gain.setTargetAtTime(muted ? 0 : .7, AC.currentTime, .06);
+      if (!ambient) startAmbient();
+    }
+    paintMute();
+  });
+
+  /* ==================== XP / level ==================== */
+  const xpState = { level: 1, xp: 0, xpMax: 12 };
+  let levelUpFlash = 0;
+
+  function xpForLevel(level){ return 8 + level * 4; }   // L1→2: 12, L2→3: 16, L3→4: 20, …
+
+  function refreshXpBar(){
+    const pct = Math.min(1, xpState.xp / xpState.xpMax);
+    barFill.style.width = (pct * 100).toFixed(1) + '%';
+    lvNum.textContent = String(xpState.level);
+    xpCount.textContent = `${Math.min(xpState.xp, xpState.xpMax)} / ${xpState.xpMax}`;
+    xpbar.classList.toggle('near', pct >= 0.7);
+  }
+
+  function awardFeather(){
+    xpState.xp++;
+    if (xpState.xp >= xpState.xpMax){
+      // level up
+      xpState.level++;
+      xpState.xp = 0;
+      xpState.xpMax = xpForLevel(xpState.level);
+      onLevelUp();
+    }
+    refreshXpBar();
+  }
+
+  function onLevelUp(){
+    playLevelUpSound(xpState.level);
+    xpbar.classList.add('levelup', 'pulse');
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 120);
+    setTimeout(() => xpbar.classList.remove('levelup'), 900);
+    setTimeout(() => xpbar.classList.remove('pulse'), 700);
+    levelUpFlash = 1;
+  }
+
+  /* ==================== pressure slider ==================== */
+  let pressureMultiplier = 1;
+  try {
+    const saved = Number(localStorage.getItem('pillow:pressure'));
+    if (Number.isFinite(saved) && saved >= 1 && saved <= 5){
+      pressureMultiplier = saved;
+      pressureSlider.value = String(saved);
+    }
+  } catch(e){}
+  function refreshPressureLabel(){
+    pressureVal.textContent = pressureMultiplier.toFixed(1) + '×';
+    // tint the readout toward warm as intensity increases
+    const t = (pressureMultiplier - 1) / 4;
+    const r = Math.round(176 + t * 79);
+    const g = Math.round(152 + t * 22);
+    const b = Math.round(136 - t * 60);
+    pressureVal.style.color = `rgb(${r},${g},${b})`;
+  }
+  pressureSlider.addEventListener('input', () => {
+    pressureMultiplier = Number(pressureSlider.value);
+    refreshPressureLabel();
+    try { localStorage.setItem('pillow:pressure', String(pressureMultiplier)); } catch(e){}
+  });
+  refreshPressureLabel();
+
+  /* ==================== pillow ==================== */
+  const N = 84;
+  let pillowCX = 0, pillowCY = 0, pillowRX = 0, pillowRY = 0;
+  let points = [];
+  let pressPressure = 0;
+  let pressTarget = 0;
+  let idlePhase = 0;
+  let featherSpawnAccum = 0;
+
+  function buildPillow(){
+    pillowCX = W / 2;
+    pillowCY = H / 2 + 10;
+    pillowRX = Math.min(W * 0.30, 250);
+    pillowRY = pillowRX * 0.68;
+    points = [];
+    const n = 3.2;
+    for (let i = 0; i < N; i++){
+      const a = (i / N) * Math.PI * 2;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const hx = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / n) * pillowRX;
+      const hy = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / n) * pillowRY;
+      points.push({ hx, hy, x: hx, y: hy, vx: 0, vy: 0 });
+    }
+  }
+
+  /* ==================== pointer ==================== */
+  let pointer = { x: 0, y: 0, down: false, activeId: null };
+
+  function pointerInside(){
+    if (!pointer.down) return false;
+    const px = pointer.x - pillowCX;
+    const py = pointer.y - pillowCY;
+    const k = 1.18;
+    return (Math.pow(Math.abs(px / (pillowRX * k)), 3.2) +
+            Math.pow(Math.abs(py / (pillowRY * k)), 3.2)) < 1;
+  }
+
+  /* ==================== feathers ==================== */
+  const feathers = [];
+  const MAX_FEATHERS = calm ? 40 : 160;
+
+  function spawnFeather(x, y, vx, vy){
+    if (feathers.length >= MAX_FEATHERS) return;
+    feathers.push({
+      x, y,
+      vx: vx + (Math.random() - .5) * .3,
+      vy: vy + (Math.random() - .5) * .2,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - .5) * .07,
+      life: 1,
+      decay: 0.0018 + Math.random() * 0.0016,
+      size: 3.5 + Math.random() * 5,
+      seed: Math.random() * 6.28,
+      sway: 0.4 + Math.random() * 0.6,
+      chimed: false
+    });
+    awardFeather();
+  }
+
+  function updateFeathers(dt){
+    const fadeStart = 40;
+    for (let i = feathers.length - 1; i >= 0; i--){
+      const f = feathers[i];
+      f.life -= f.decay * dt;
+      if (f.life <= 0){ feathers.splice(i, 1); continue; }
+      f.vx += Math.sin(idlePhase * 1.4 + f.seed) * 0.012 * dt * f.sway;
+      f.vy -= 0.006 * dt;
+      f.vx *= Math.pow(0.996, dt);
+      f.vy *= Math.pow(0.996, dt);
+      f.x += f.vx * dt;
+      f.y += f.vy * dt;
+      f.rot += f.vr * dt;
+      if (!f.chimed && f.y < fadeStart + 30 && Math.random() < .35){
+        f.chimed = true;
+        playFeatherChime();
+      }
+      if (f.y < fadeStart) f.life = Math.min(f.life, Math.max(0, (f.y) / fadeStart));
+      if (f.x < -60 || f.x > W + 60 || f.y < -30){ feathers.splice(i, 1); continue; }
+    }
+  }
+
+  function drawFeathers(){
+    for (const f of feathers){
+      const a = Math.max(0, f.life);
+      const s = f.size;
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.translate(f.x, f.y);
+      ctx.rotate(f.rot);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 3);
+      g.addColorStop(0, `rgba(255,240,220,${a * 0.35})`);
+      g.addColorStop(1, 'rgba(255,240,220,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-s*3, -s*3, s*6, s*6);
+      ctx.strokeStyle = `rgba(240,225,205,${a * .8})`;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(-s, 0);
+      ctx.lineTo(s, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.9, 0);
+      ctx.quadraticCurveTo(-s * 0.3, -s * 0.55, s * 0.7, -s * 0.05);
+      ctx.quadraticCurveTo(s * 0.4,  s * 0.55, -s * 0.9, 0);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(255,248,236,${a * .75})`;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /* ==================== ambient dust ==================== */
+  const dust = [];
+  (function initDust(){
+    const dn = calm ? 24 : 52;
+    for (let i = 0; i < dn; i++){
+      dust.push({
+        x: Math.random() * W, y: Math.random() * H,
+        r: 0.5 + Math.random() * 1.1,
+        vx: (Math.random() - .5) * .12,
+        vy: -0.02 - Math.random() * .06,
+        seed: Math.random() * 6.28,
+        alpha: .15 + Math.random() * .25
+      });
+    }
+  })();
+
+  function updateDust(dt){
+    for (const d of dust){
+      d.x += (d.vx + Math.sin(idlePhase * .6 + d.seed) * 0.06) * dt;
+      d.y += d.vy * dt;
+      if (d.y < -10) d.y = H + 10;
+      if (d.x < -10) d.x = W + 10;
+      if (d.x > W + 10) d.x = -10;
+    }
+  }
+
+  /* ==================== update ==================== */
+  function update(dt){
+    idlePhase += dt * 0.008;
+    pressTarget = pointerInside() ? 1 : 0;
+    pressPressure += (pressTarget - pressPressure) * Math.min(1, 0.08 * dt);
+
+    if (AC && press) updatePressDrone(pressPressure, pressureMultiplier);
+
+    const breathe = 1 + Math.sin(idlePhase) * 0.014;
+
+    // dent depth is scaled by the slider — diminishing returns so the pillow
+    // still looks like a pillow at max intensity
+    const dentScale = 1 + (pressureMultiplier - 1) * 0.35;
+    const globalSquash = 1 - pressPressure * 0.045 * Math.min(1.6, dentScale);
+
+    const springK = 0.16;
+    const damping = 0.86;
+    const grabRBase = 200;
+    // grab radius grows modestly with the slider
+    const grabR = grabRBase * (1 + (pressureMultiplier - 1) * 0.14);
+    const pushK = 0.9 * dentScale;
+
+    const px = pointer.x - pillowCX;
+    const py = pointer.y - pillowCY;
+    const inside = pointerInside();
+
+    let deepestD = 0;
+    let deepest = null;
+
+    for (const p of points){
+      const hx = p.hx * breathe * globalSquash;
+      const hy = p.hy * breathe * globalSquash;
+      let ax = (hx - p.x) * springK;
+      let ay = (hy - p.y) * springK;
+      if (inside){
+        const dx = px - p.x;
+        const dy = py - p.y;
+        const d = Math.hypot(dx, dy);
+        if (d < grabR && d > 1){
+          const falloff = Math.pow(1 - d / grabR, 1.7);
+          ax += (dx / d) * falloff * pushK;
+          ay += (dy / d) * falloff * pushK;
+        }
+      }
+      p.vx += ax * dt;
+      p.vy += ay * dt;
+      p.vx *= Math.pow(damping, dt);
+      p.vy *= Math.pow(damping, dt);
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      const dD = Math.hypot(p.hx * breathe - p.x, p.hy * breathe - p.y);
+      if (dD > deepestD){ deepestD = dD; deepest = p; }
+    }
+
+    /* Feather spawn rate now scales with the pressure slider.
+       rateMult = pressureMultiplier^0.8 (sub-linear so 5x isn't 5x the mess) */
+    const rateMult = Math.pow(pressureMultiplier, 0.8);
+    const baseRate = 0.11;
+
+    if (inside && pressPressure > 0.3 && deepestD > 5 && !calm){
+      featherSpawnAccum += dt * pressPressure * baseRate * rateMult;
+      while (featherSpawnAccum >= 1){
+        featherSpawnAccum -= 1;
+        const sx = pillowCX + deepest.x + (Math.random() - .5) * 24;
+        const sy = pillowCY + deepest.y + (Math.random() - .5) * 24;
+        spawnFeather(
+          sx, sy,
+          (Math.random() - .5) * 0.8 + (pointer.x - sx) * 0.004,
+          -0.55 - Math.random() * 0.6
+        );
+        playFeatherWhoosh();
+      }
+    } else if (inside && pressPressure > 0.5 && !calm){
+      // slow trickle even without deep dent
+      if (Math.random() < pressPressure * 0.015 * rateMult * dt){
+        const sx = pillowCX + (Math.random() - .5) * pillowRX * 1.2;
+        const sy = pillowCY + (Math.random() - .5) * pillowRY * 1.2;
+        spawnFeather(sx, sy, (Math.random() - .5) * .7, -0.5 - Math.random() * .5);
+        playFeatherWhoosh();
+      }
+    }
+
+    if (levelUpFlash > 0) levelUpFlash *= Math.pow(0.94, dt);
+
+    updateFeathers(dt);
+    updateDust(dt);
+  }
+
+  /* ==================== draw ==================== */
+  function pathFromPoints(){
+    ctx.beginPath();
+    const first = points[0], last = points[N - 1];
+    ctx.moveTo((last.x + first.x) / 2, (last.y + first.y) / 2);
+    for (let i = 0; i < N; i++){
+      const p = points[i];
+      const next = points[(i + 1) % N];
+      const mx = (p.x + next.x) / 2;
+      const my = (p.y + next.y) / 2;
+      ctx.quadraticCurveTo(p.x, p.y, mx, my);
+    }
+    ctx.closePath();
+  }
+
+  function drawPillow(){
+    ctx.save();
+    ctx.translate(pillowCX, pillowCY);
+
+    const shadowScale = 1 + pressPressure * 0.08;
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    const shad = ctx.createRadialGradient(0, pillowRY * 1.0, 0, 0, pillowRY * 1.0, pillowRX * 1.4 * shadowScale);
+    shad.addColorStop(0, 'rgba(20, 6, 12, 0.7)');
+    shad.addColorStop(1, 'rgba(20, 6, 12, 0)');
+    ctx.fillStyle = shad;
+    ctx.beginPath();
+    ctx.ellipse(0, pillowRY * 1.05, pillowRX * 1.05 * shadowScale, pillowRY * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(0, -pillowRY * 0.06);
+    pathFromPoints();
+    ctx.fillStyle = 'rgba(80, 40, 30, 0.65)';
+    ctx.fill();
+    ctx.restore();
+
+    pathFromPoints();
+    const grad = ctx.createRadialGradient(
+      -pillowRX * 0.30, -pillowRY * 0.42, 0,
+      -pillowRX * 0.20, -pillowRY * 0.20, pillowRX * 1.55
+    );
+    grad.addColorStop(0,    '#fbeed6');
+    grad.addColorStop(0.32, '#eed9b0');
+    grad.addColorStop(0.65, '#d8b785');
+    grad.addColorStop(0.88, '#a88259');
+    grad.addColorStop(1,    '#7a5a3a');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    if (pressPressure > 0.05){
+      ctx.save();
+      pathFromPoints();
+      ctx.clip();
+      const dx = pointer.x - pillowCX;
+      const dy = pointer.y - pillowCY;
+      const rad = (60 + pressPressure * 90) * (1 + (pressureMultiplier - 1) * 0.1);
+      const dimp = ctx.createRadialGradient(dx, dy, 0, dx, dy, rad);
+      dimp.addColorStop(0, `rgba(80, 40, 30, ${Math.min(0.55, pressPressure * 0.42 * (1 + (pressureMultiplier - 1) * 0.2))})`);
+      dimp.addColorStop(1, 'rgba(80, 40, 30, 0)');
+      ctx.fillStyle = dimp;
+      ctx.fillRect(-pillowRX * 1.6, -pillowRY * 1.6, pillowRX * 3.2, pillowRY * 3.2);
+      ctx.restore();
+    }
+
+    pathFromPoints();
+    ctx.strokeStyle = 'rgba(255, 235, 210, 0.32)';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    ctx.save();
+    pathFromPoints();
+    ctx.clip();
+    const hl = ctx.createRadialGradient(
+      -pillowRX * 0.45, -pillowRY * 0.55, 0,
+      -pillowRX * 0.45, -pillowRY * 0.55, pillowRX * 0.9
+    );
+    hl.addColorStop(0, 'rgba(255, 250, 235, 0.55)');
+    hl.addColorStop(1, 'rgba(255, 250, 235, 0)');
+    ctx.fillStyle = hl;
+    ctx.fillRect(-pillowRX, -pillowRY, pillowRX * 2, pillowRY * 2);
+    ctx.restore();
+
+    if (pressPressure > 0.3){
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const dx = pointer.x - pillowCX;
+      const dy = pointer.y - pillowCY;
+      const rad = 40 + pressPressure * 60;
+      const glow = ctx.createRadialGradient(dx, dy, 0, dx, dy, rad);
+      glow.addColorStop(0, `rgba(255, 200, 150, ${(pressPressure - 0.3) * 0.45})`);
+      glow.addColorStop(1, 'rgba(255, 200, 150, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(dx - rad, dy - rad, rad * 2, rad * 2);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawBackground(){
+    const bg = ctx.createRadialGradient(W/2, H * 0.35, 0, W/2, H * 0.5, Math.max(W, H) * 0.85);
+    bg.addColorStop(0, '#1d1016');
+    bg.addColorStop(1, '#0c050a');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const haloR = pillowRX * (1.7 + pressPressure * 0.15);
+    const halo = ctx.createRadialGradient(
+      pillowCX, pillowCY, 0,
+      pillowCX, pillowCY, haloR
+    );
+    const warm = 0.05 + pressPressure * 0.08 + levelUpFlash * 0.15;
+    halo.addColorStop(0, `rgba(255, 180, 140, ${warm})`);
+    halo.addColorStop(1, 'rgba(255, 180, 140, 0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, W, H);
+
+    for (const d of dust){
+      const tw = .7 + .3 * Math.sin(idlePhase * 1.2 + d.seed);
+      ctx.globalAlpha = d.alpha * tw;
+      ctx.fillStyle = 'rgb(220, 200, 180)';
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, 6.28);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function render(){
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+    drawPillow();
+    drawFeathers();
+  }
+
+  /* ==================== main loop ==================== */
+  let lastFrame = performance.now();
+  function frame(ts){
+    const dt = Math.min(2, (ts - lastFrame) / 16.667) || 1;
+    lastFrame = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  /* ==================== input ==================== */
+  function down(x, y, id){
+    pointer.x = x; pointer.y = y; pointer.down = true; pointer.activeId = id;
+    ensureAudio();
+    startAmbient();
+    startPressDrone();
+    hint.classList.add('fade');
+  }
+  function move(x, y){
+    pointer.x = x; pointer.y = y;
+  }
+  function up(){
+    if (!pointer.down) return;
+    const intensity = 0.5 + pressPressure * 0.5;
+    pointer.down = false;
+    pointer.activeId = null;
+    stopPressDrone();
+    if (pressPressure > 0.15) playFlump(intensity);
+  }
+
+  cv.addEventListener('pointerdown', e => {
+    if (pointer.down) return;
+    try { cv.setPointerCapture(e.pointerId); } catch(_){}
+    down(e.clientX, e.clientY, e.pointerId);
+  }, { passive: true });
+
+  cv.addEventListener('pointermove', e => {
+    if (pointer.activeId !== e.pointerId) return;
+    move(e.clientX, e.clientY);
+  });
+
+  cv.addEventListener('pointerup', e => {
+    if (pointer.activeId !== e.pointerId) return;
+    try { cv.releasePointerCapture(e.pointerId); } catch(_){}
+    up();
+  });
+
+  cv.addEventListener('pointercancel', e => {
+    if (pointer.activeId !== e.pointerId) return;
+    up();
+  });
+
+  addEventListener('blur', () => { if (pointer.down) up(); });
+
+  let keyHeld = false;
+  addEventListener('keydown', e => {
+    if (keyHeld) return;
+    if (e.key === ' ' || e.key === 'Enter'){
+      e.preventDefault();
+      keyHeld = true;
+      down(pillowCX, pillowCY, 'key');
+    }
+  });
+  addEventListener('keyup', e => {
+    if (!keyHeld) return;
+    if (e.key === ' ' || e.key === 'Enter'){
+      keyHeld = false;
+      up();
+    }
+  });
+
+  /* ==================== boot ==================== */
+  resize();
+  refreshXpBar();
+  paintMute();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

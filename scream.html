@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scream Into the Void</title>
+<meta name="description" content="Hold. Let it build. Release. Nothing is stored.">
+<meta name="theme-color" content="#04060c">
+<style>
+:root{--ink:#dce8ff;--mute:#7688b0;--dim:#4a5a78;--line:rgba(140,200,255,.16)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:#04060c;color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
+  touch-action:none}
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
+  touch-action:none;cursor:pointer}
+.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  background:rgba(10,12,24,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s}
+.back:hover{color:var(--ink);border-color:rgba(100,220,255,.5);background:rgba(100,220,255,.1)}
+.hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 40px);
+  transform:translateX(-50%);
+  color:var(--dim);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  font-style:italic;pointer-events:none;transition:opacity .6s ease;
+  text-align:center;line-height:1.9;padding:0 20px;max-width:90vw}
+.hint.gone{opacity:0}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+<p class="hint" id="hint">Hold anywhere. Let it build. Release.</p>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cv = $('#c'), ctx = cv.getContext('2d');
+  const hint = $('#hint');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==================== canvas ==================== */
+  let W = 0, H = 0, dpr = 1;
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener('resize', resize); resize();
+
+  /* ==================== palette ====================
+     Hardcoded RGB triples — CSS custom properties do NOT work inside canvas
+     contexts (the original bug). Interpolated from cool cyan at low charge to
+     hot gold/white at peak, so the "scream" visibly heats up. */
+  const COOL = [100, 220, 255];
+  const WARM = [255, 190, 130];
+  const HOT  = [255, 245, 220];
+  function lerp(a, b, t){ return a + (b - a) * t; }
+  function mixRGB(a, b, t){
+    return [Math.round(lerp(a[0], b[0], t)),
+            Math.round(lerp(a[1], b[1], t)),
+            Math.round(lerp(a[2], b[2], t))];
+  }
+  function toneForCharge(c){
+    // 0 → cool cyan, 0.6 → warm gold, 1 → hot white
+    if (c < .6) return mixRGB(COOL, WARM, c / .6);
+    return mixRGB(WARM, HOT, (c - .6) / .4);
+  }
+  function rgba(c, a){ return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+
+  /* ==================== audio ==================== */
+  let AC = null, master = null;
+  let chargeNodes = null;
+  function ensureAudio(){
+    if (!AC){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch(e){ return false; }
+      master = AC.createGain();
+      master.gain.value = .55;
+      master.connect(AC.destination);
+    }
+    if (AC.state !== 'running') AC.resume().catch(()=>{});
+    return true;
+  }
+
+  function startChargeSound(){
+    if (!ensureAudio() || chargeNodes) return;
+    const t = AC.currentTime;
+    const g = AC.createGain(); g.gain.value = 0;
+
+    const o1 = AC.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 55;
+    const o2 = AC.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 82.5;
+    o2.detune.value = 12;
+    const o3 = AC.createOscillator(); o3.type = 'sine'; o3.frequency.value = 27.5;
+
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 200; lp.Q.value = 3.5;
+
+    const nBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+    const nd = nBuf.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const ns = AC.createBufferSource(); ns.buffer = nBuf; ns.loop = true;
+    const nf = AC.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 1200; nf.Q.value = .9;
+    const ng = AC.createGain(); ng.gain.value = 0;
+
+    const o1g = AC.createGain(); o1g.gain.value = .5;
+    const o2g = AC.createGain(); o2g.gain.value = .35;
+    const o3g = AC.createGain(); o3g.gain.value = .5;
+
+    o1.connect(o1g); o2.connect(o2g); o3.connect(o3g);
+    o1g.connect(lp); o2g.connect(lp); o3g.connect(lp);
+    lp.connect(g);
+    ns.connect(nf); nf.connect(ng); ng.connect(g);
+    g.connect(master);
+
+    o1.start(t); o2.start(t); o3.start(t); ns.start(t);
+    chargeNodes = { g, lp, o1, o2, o3, ns, ng, nf };
+  }
+
+  function updateChargeSound(charge){
+    if (!chargeNodes || !AC) return;
+    const t = AC.currentTime;
+    const g = chargeNodes.g.gain;
+    // volume rises with charge
+    g.setTargetAtTime(.05 + .35 * charge, t, .08);
+    // filter opens as charge builds
+    chargeNodes.lp.frequency.setTargetAtTime(180 + 3200 * charge * charge, t, .1);
+    // pitch rises slightly
+    chargeNodes.o1.frequency.setTargetAtTime(55 + charge * 22, t, .15);
+    chargeNodes.o2.frequency.setTargetAtTime(82.5 + charge * 33, t, .15);
+    chargeNodes.o3.frequency.setTargetAtTime(27.5 + charge * 11, t, .15);
+    // hiss
+    chargeNodes.ng.gain.setTargetAtTime(.005 + .07 * charge, t, .1);
+    chargeNodes.nf.frequency.setTargetAtTime(800 + charge * 2800, t, .1);
+  }
+
+  function stopChargeSound(){
+    if (!chargeNodes || !AC) return;
+    const n = chargeNodes;
+    const t = AC.currentTime;
+    n.g.gain.setTargetAtTime(0, t, .08);
+    chargeNodes = null;
+    setTimeout(() => {
+      try { n.o1.stop(); n.o2.stop(); n.o3.stop(); n.ns.stop(); } catch(_){}
+    }, 800);
+  }
+
+  function playBlastSound(charge){
+    if (!ensureAudio()) return;
+    const t = AC.currentTime;
+    // Bass drop
+    const o = AC.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(220 + charge * 80, t);
+    o.frequency.exponentialRampToValueAtTime(28, t + .55);
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(.8, t + .012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 1.5);
+
+    // Mid punch
+    const o2 = AC.createOscillator(); o2.type = 'triangle';
+    o2.frequency.setValueAtTime(880, t);
+    o2.frequency.exponentialRampToValueAtTime(180, t + .28);
+    const g2 = AC.createGain();
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(.22, t + .008);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + .6);
+    o2.connect(g2); g2.connect(master);
+    o2.start(t); o2.stop(t + .7);
+
+    // Crackle burst
+    const nb = AC.createBuffer(1, AC.sampleRate * 1.2, AC.sampleRate);
+    const nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++){
+      const env = Math.pow(1 - i / nd.length, 1.6);
+      nd[i] = (Math.random() * 2 - 1) * env;
+    }
+    const ns = AC.createBufferSource(); ns.buffer = nb;
+    const nf = AC.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 900;
+    const ngn = AC.createGain(); ngn.gain.value = .22 + .18 * charge;
+    ns.connect(nf); nf.connect(ngn); ngn.connect(master);
+    ns.start(t);
+
+    // Sub tail
+    const sub = AC.createOscillator(); sub.type = 'sine'; sub.frequency.value = 42;
+    const sg = AC.createGain();
+    sg.gain.setValueAtTime(0.0001, t + .05);
+    sg.gain.exponentialRampToValueAtTime(.28, t + .25);
+    sg.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+    sub.connect(sg); sg.connect(master);
+    sub.start(t); sub.stop(t + 2.1);
+  }
+
+  /* ==================== state ==================== */
+  let phase = 'idle';        // 'charging' | 'shatter' | 'burst' | 'fading' | 'idle'
+  let charge = 0;            // 0..1
+  let chargeStarted = 0;
+  let seedX = 0, seedY = 0;
+  let targetX = 0, targetY = 0;
+  let phaseStarted = 0;
+  let petals = [];
+  let shockwaves = [];
+  let particles = [];
+  let dust = [];
+  let flash = 0;
+  let shake = 0;
+  let lastPetalSpawn = 0;
+  let activePointerId = null;
+
+  // ambient drifting dust so the empty page is not blank
+  for (let i = 0; i < (calm ? 25 : 60); i++){
+    dust.push({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - .5) * .00006,
+      vy: (Math.random() - .5) * .00006,
+      r: .5 + Math.random() * 1.3,
+      ph: Math.random() * 6.28
+    });
+  }
+
+  /* ==================== petals ====================
+     Each petal is a growing curved streak from the seed. Points append at the
+     tip each frame. The whole set reads as a radiating starburst that heats up
+     with charge. */
+  const MAX_PETALS = 110;
+  const PETAL_SEGMENT = 7;    // px of growth per frame at base speed
+
+  function spawnPetal(chargeAtSpawn){
+    const a = Math.random() * Math.PI * 2;
+    const speed = 3 + Math.random() * 3 + chargeAtSpawn * 7;
+    const warmth = chargeAtSpawn * .85;
+    petals.push({
+      points: [{ x: seedX, y: seedY }],
+      angle: a,
+      angleVel: (Math.random() - .5) * .045,
+      speed,
+      thickness: .7 + Math.random() * 1.4 + chargeAtSpawn * 1.2,
+      cool: [Math.round(lerp(COOL[0], WARM[0], warmth)),
+             Math.round(lerp(COOL[1], WARM[1], warmth)),
+             Math.round(lerp(COOL[2], WARM[2], warmth))],
+      life: 1,
+      growing: true
+    });
+  }
+
+  function stepPetals(dt){
+    for (let i = petals.length - 1; i >= 0; i--){
+      const p = petals[i];
+      if (p.growing){
+        // jitter the angle slightly, plus a gentle curl
+        p.angle += p.angleVel * dt + (Math.random() - .5) * .02 * dt;
+        const tip = p.points[p.points.length - 1];
+        const nx = tip.x + Math.cos(p.angle) * p.speed * dt;
+        const ny = tip.y + Math.sin(p.angle) * p.speed * dt;
+        // stop growing past viewport edge with margin
+        if (nx < -60 || nx > W + 60 || ny < -60 || ny > H + 60){
+          p.growing = false;
+        } else {
+          p.points.push({ x: nx, y: ny });
+          // sometimes branch a sub-petal at high charge
+          if (charge > .55 && petals.length < MAX_PETALS && Math.random() < .03 * dt * charge){
+            const childAngle = p.angle + (Math.random() - .5) * .9;
+            petals.push({
+              points: [{ x: nx, y: ny }],
+              angle: childAngle,
+              angleVel: (Math.random() - .5) * .05,
+              speed: p.speed * (.7 + Math.random() * .5),
+              thickness: p.thickness * .7,
+              cool: p.cool.slice(),
+              life: 1,
+              growing: true
+            });
+          }
+        }
+      }
+      // during shatter, pull points back toward the seed
+      if (phase === 'shatter'){
+        const rate = .28 * dt;
+        for (let j = p.points.length - 1; j > 0; j--){
+          const pt = p.points[j];
+          pt.x += (seedX - pt.x) * rate;
+          pt.y += (seedY - pt.y) * rate;
+        }
+      }
+      if (phase === 'burst' || phase === 'fading'){
+        p.life -= .04 * dt;
+      }
+    }
+    petals = petals.filter(p => p.life > 0);
+  }
+
+  /* ==================== shockwaves ==================== */
+  function spawnShockwave(delay, maxR, thickness, color, alpha){
+    shockwaves.push({ r: 0, maxR, thickness, color, alpha, born: performance.now() + delay, delay, life: 1 });
+  }
+  function stepShockwaves(dt){
+    const now = performance.now();
+    for (let i = shockwaves.length - 1; i >= 0; i--){
+      const s = shockwaves[i];
+      if (now < s.born) continue;
+      const k = (now - s.born) / 900;
+      s.r = s.maxR * Math.min(1, 1 - Math.pow(1 - k, 2.2));
+      s.life = Math.max(0, 1 - k);
+      if (s.life <= 0) shockwaves.splice(i, 1);
+    }
+  }
+
+  /* ==================== particles ==================== */
+  function spawnBurst(chargeAtRelease){
+    const count = Math.round(160 + 340 * chargeAtRelease);
+    for (let i = 0; i < count; i++){
+      const a = Math.random() * Math.PI * 2;
+      const baseSpeed = 2 + Math.random() * 6 + chargeAtRelease * 14;
+      const speed = baseSpeed * (.6 + Math.random() * .8);
+      // bias hue toward the charge tone but add variety
+      const toneBias = Math.random() * .4;
+      const c = mixRGB(toneForCharge(chargeAtRelease), [255, 255, 255], toneBias);
+      particles.push({
+        x: seedX, y: seedY,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed,
+        life: 1,
+        decay: .008 + Math.random() * .014,
+        size: 1 + Math.random() * 2.5,
+        cool: c,
+        drag: .965 + Math.random() * .015
+      });
+    }
+  }
+  function stepParticles(dt){
+    for (let i = particles.length - 1; i >= 0; i--){
+      const p = particles[i];
+      p.life -= p.decay * dt;
+      if (p.life <= 0){ particles.splice(i, 1); continue; }
+      p.vx *= Math.pow(p.drag, dt);
+      p.vy *= Math.pow(p.drag, dt);
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+  }
+
+  /* ==================== transitions ==================== */
+  function onHoldStart(x, y){
+    ensureAudio();
+    startChargeSound();
+    hint.classList.add('gone');
+    phase = 'charging';
+    chargeStarted = performance.now();
+    phaseStarted = chargeStarted;
+    seedX = targetX = x;
+    seedY = targetY = y;
+    charge = 0;
+    petals = [];
+    shockwaves = [];
+    flash = 0;
+    shake = 0;
+  }
+  function onHoldMove(x, y){
+    targetX = x; targetY = y;
+  }
+  function onHoldEnd(){
+    if (phase !== 'charging') return;
+    const elapsed = (performance.now() - chargeStarted) / 1000;
+    // a tap (< 0.18s) still gives a small pop
+    const finalCharge = Math.max(charge, elapsed < .18 ? .18 : charge);
+    stopChargeSound();
+    playBlastSound(finalCharge);
+    phase = 'shatter';
+    phaseStarted = performance.now();
+    // pre-schedule the burst effects
+    const willBurst = finalCharge;
+    // put the eventual burst values on the petal state so we don't lose them
+    petals._burstCharge = willBurst;
+  }
+  function triggerBurst(){
+    const c = petals._burstCharge || charge;
+    spawnBurst(c);
+    spawnShockwave(0, Math.min(W, H) * .95, 3 + c * 5, [220, 240, 255], .9);
+    spawnShockwave(60, Math.min(W, H) * 1.15, 2 + c * 3, [160, 210, 255], .6);
+    spawnShockwave(140, Math.min(W, H) * .7, 1.5 + c * 2, [255, 220, 180], .75);
+    flash = .55 + .35 * c;
+    shake = 6 + 20 * c;
+    phase = 'burst';
+    phaseStarted = performance.now();
+  }
+
+  /* ==================== pointer ==================== */
+  cv.addEventListener('pointerdown', e => {
+    if (activePointerId !== null) return;
+    activePointerId = e.pointerId;
+    try { cv.setPointerCapture(e.pointerId); } catch(_){}
+    onHoldStart(e.clientX, e.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  cv.addEventListener('pointermove', e => {
+    if (e.pointerId !== activePointerId) return;
+    onHoldMove(e.clientX, e.clientY);
+  });
+
+  cv.addEventListener('pointerup', e => {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    try { cv.releasePointerCapture(e.pointerId); } catch(_){}
+    onHoldEnd();
+  });
+
+  cv.addEventListener('pointercancel', e => {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    onHoldEnd();
+  });
+
+  addEventListener('blur', () => {
+    if (activePointerId !== null){
+      activePointerId = null;
+      onHoldEnd();
+    }
+  });
+
+  /* ==================== update ==================== */
+  function update(dt){
+    const now = performance.now();
+
+    // --- charge phase
+    if (phase === 'charging'){
+      const held = (now - chargeStarted) / 1000;
+      // charge ramps quickly at first, then plateaus — 2 seconds to full
+      const target = Math.min(1, held / 2.0);
+      charge += (target - charge) * Math.min(1, .12 * dt);
+      if (charge > 1) charge = 1;
+
+      // drag the seed smoothly toward the pointer
+      seedX += (targetX - seedX) * .22 * dt;
+      seedY += (targetY - seedY) * .22 * dt;
+
+      // spawn petals on a schedule — denser at high charge
+      const interval = Math.max(28, 95 - charge * 65);
+      if (now - lastPetalSpawn > interval && petals.length < MAX_PETALS){
+        lastPetalSpawn = now;
+        const batch = 1 + Math.floor(charge * 3);
+        for (let i = 0; i < batch; i++) spawnPetal(charge);
+      }
+
+      updateChargeSound(charge);
+    }
+
+    // --- shatter phase (short pull-back, then burst)
+    if (phase === 'shatter'){
+      const elapsed = now - phaseStarted;
+      charge = Math.min(1, charge + .02 * dt);
+      if (elapsed > 140){
+        triggerBurst();
+      }
+    }
+
+    // --- burst and fading
+    if (phase === 'burst'){
+      const elapsed = now - phaseStarted;
+      if (elapsed > 1200){
+        phase = 'fading';
+      }
+    }
+    if (phase === 'fading'){
+      if (particles.length === 0 && shockwaves.length === 0){
+        phase = 'idle';
+        charge = 0;
+      }
+    }
+
+    // --- step everything
+    stepPetals(dt);
+    stepShockwaves(dt);
+    stepParticles(dt);
+    flash *= Math.pow(.88, dt);
+    shake *= Math.pow(.9, dt);
+    if (shake < .2) shake = 0;
+
+    // --- ambient dust drift
+    for (const d of dust){
+      d.x += d.vx * dt;
+      d.y += d.vy * dt;
+      if (d.x < 0) d.x += 1; if (d.x > 1) d.x -= 1;
+      if (d.y < 0) d.y += 1; if (d.y > 1) d.y -= 1;
+    }
+  }
+
+  /* ==================== render ==================== */
+  let time = 0;
+  function draw(ts){
+    const dt = Math.min(3, (ts - (draw._last || ts)) / 16.667) || 1;
+    draw._last = ts;
+    time += dt * .016;
+
+    // fresh frame (no trail accumulation — petals already have their own fade)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    // shake
+    let sx = 0, sy = 0;
+    if (shake > .3){
+      sx = (Math.random() - .5) * shake;
+      sy = (Math.random() - .5) * shake;
+      ctx.translate(sx, sy);
+    }
+
+    // deep background
+    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * .85);
+    bg.addColorStop(0, '#070a16');
+    bg.addColorStop(1, '#03040a');
+    ctx.fillStyle = bg;
+    ctx.fillRect(-40, -40, W + 80, H + 80);
+
+    // darkening veil as charge builds
+    if (charge > .05){
+      const dim = charge * .45;
+      ctx.fillStyle = `rgba(0,0,0,${dim})`;
+      ctx.fillRect(-40, -40, W + 80, H + 80);
+    }
+
+    // ambient dust
+    for (const d of dust){
+      const a = .12 + .08 * Math.sin(time * .6 + d.ph);
+      ctx.fillStyle = `rgba(180,200,255,${a})`;
+      ctx.fillRect(d.x * W, d.y * H, d.r, d.r);
+    }
+
+    // petals — additive glow
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of petals){
+      if (p.points.length < 2) continue;
+      const a = p.life * (.35 + .65 * charge);
+      const col = p.cool;
+      // outer glow
+      ctx.strokeStyle = rgba(col, a * .2);
+      ctx.lineWidth = p.thickness * 5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p.points[0].x, p.points[0].y);
+      for (let i = 1; i < p.points.length; i++) ctx.lineTo(p.points[i].x, p.points[i].y);
+      ctx.stroke();
+      // mid
+      ctx.strokeStyle = rgba(col, a * .6);
+      ctx.lineWidth = p.thickness * 2.2;
+      ctx.beginPath();
+      ctx.moveTo(p.points[0].x, p.points[0].y);
+      for (let i = 1; i < p.points.length; i++) ctx.lineTo(p.points[i].x, p.points[i].y);
+      ctx.stroke();
+      // core
+      ctx.strokeStyle = rgba([255, 255, 255], a * .9);
+      ctx.lineWidth = Math.max(.4, p.thickness * .8);
+      ctx.beginPath();
+      ctx.moveTo(p.points[0].x, p.points[0].y);
+      for (let i = 1; i < p.points.length; i++) ctx.lineTo(p.points[i].x, p.points[i].y);
+      ctx.stroke();
+    }
+
+    // seed core — bright point at the press
+    if (phase === 'charging' || phase === 'shatter'){
+      const pulse = 1 + .25 * Math.sin(time * 8 * (1 + charge));
+      const seedR = (8 + charge * 34) * pulse;
+      const tone = toneForCharge(charge);
+      const g = ctx.createRadialGradient(seedX, seedY, 0, seedX, seedY, seedR * 3);
+      g.addColorStop(0, rgba([255, 255, 255], .95));
+      g.addColorStop(.18, rgba(tone, .75));
+      g.addColorStop(.5, rgba(tone, .18));
+      g.addColorStop(1, rgba(tone, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(seedX, seedY, seedR * 3, 0, 6.28);
+      ctx.fill();
+    }
+
+    // shockwaves
+    for (const s of shockwaves){
+      if (s.r <= 0) continue;
+      ctx.strokeStyle = rgba(s.color, s.alpha * s.life);
+      ctx.lineWidth = s.thickness;
+      ctx.beginPath();
+      ctx.arc(seedX, seedY, s.r, 0, 6.28);
+      ctx.stroke();
+      // inner bright rim
+      ctx.strokeStyle = rgba([255, 255, 255], s.alpha * s.life * .5);
+      ctx.lineWidth = Math.max(.6, s.thickness * .3);
+      ctx.beginPath();
+      ctx.arc(seedX, seedY, s.r * .92, 0, 6.28);
+      ctx.stroke();
+    }
+
+    // particles
+    for (const p of particles){
+      const a = Math.min(1, p.life * 1.4);
+      ctx.fillStyle = rgba(p.cool, a);
+      ctx.fillRect(p.x - p.size * .5, p.y - p.size * .5, p.size, p.size);
+      // tiny halo
+      const hg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+      hg.addColorStop(0, rgba(p.cool, a * .35));
+      hg.addColorStop(1, rgba(p.cool, 0));
+      ctx.fillStyle = hg;
+      ctx.fillRect(p.x - p.size * 3, p.y - p.size * 3, p.size * 6, p.size * 6);
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+
+    // charge indicator arc — a small ring around the seed that fills up
+    if (phase === 'charging' && charge > .05){
+      const r = 44;
+      ctx.strokeStyle = 'rgba(120,160,220,.18)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(seedX, seedY, r, 0, 6.28);
+      ctx.stroke();
+      const tone = toneForCharge(charge);
+      ctx.strokeStyle = rgba(tone, .85);
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(seedX, seedY, r, -Math.PI / 2, -Math.PI / 2 + charge * Math.PI * 2);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+
+    // flash overlay — brief white sheet at burst
+    if (flash > .01){
+      const fg = ctx.createRadialGradient(seedX, seedY, 0, seedX, seedY, Math.max(W, H) * .8);
+      fg.addColorStop(0, `rgba(255,255,255,${flash})`);
+      fg.addColorStop(.4, `rgba(200,220,255,${flash * .35})`);
+      fg.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = fg;
+      ctx.fillRect(-40, -40, W + 80, H + 80);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  function frame(ts){
+    update(Math.min(3, (ts - (frame._last || ts)) / 16.667) || 1);
+    frame._last = ts;
+    draw(ts);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

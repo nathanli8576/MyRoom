@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Constellation</title>
+<meta name="description" content="Release thoughts into a sky, then connect the stars that belong together.">
+<meta name="theme-color" content="#06060f">
+<style>
+:root{--ink:#dce4fa;--mute:#8892b0;--dim:#4e5875;--line:rgba(170,190,240,.16);--accent:190,215,255}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:#06060f;color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
+  touch-action:none;cursor:grab}
+#c.grabbing{cursor:grabbing}
+#c.placing{cursor:crosshair}
+#c.star{cursor:pointer}
+.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  background:rgba(10,12,24,.55);backdrop-filter:blur(8px);
+  transition:color .3s,border-color .3s,background .3s}
+.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.topright{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pill{font:inherit;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 14px;height:36px;border-radius:999px;
+  color:var(--mute);font-size:12px;letter-spacing:.08em;
+  background:rgba(10,12,24,.55);backdrop-filter:blur(8px);
+  border:1px solid var(--line);
+  transition:color .3s,border-color .3s,background .3s,box-shadow .3s}
+.pill:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.pill svg{width:14px;height:14px;flex:none}
+.pill.icon-only{padding:0;width:36px;justify-content:center}
+.pill .badge{
+  display:inline-block;padding:1px 6px;margin-left:2px;
+  font-size:10px;letter-spacing:.04em;font-style:italic;
+  color:#dfe6ff;background:rgba(var(--accent),.18);border-radius:999px}
+.pill .x{display:none}
+.pill.muted .w{display:none}
+.pill.muted .x{display:inline}
+.toggle{cursor:pointer}
+.toggle input{
+  appearance:none;-webkit-appearance:none;
+  width:14px;height:14px;flex:none;
+  border:1px solid rgba(var(--accent),.55);border-radius:4px;
+  background:transparent;position:relative;
+  transition:background .25s,border-color .25s;
+  cursor:pointer;outline:none;margin:0}
+.toggle input:checked{
+  background:rgba(var(--accent),.55);
+  border-color:rgba(var(--accent),.95)}
+.toggle input:checked::after{
+  content:'✓';
+  position:absolute;inset:0;
+  display:grid;place-items:center;
+  font-size:10px;color:#0a0c18;line-height:1;
+  font-weight:600;
+  font-family:-apple-system,sans-serif}
+.toggle input:focus-visible{outline:2px solid rgba(var(--accent),.6);outline-offset:2px}
+.toggle:hover{color:var(--ink);border-color:rgba(var(--accent),.5)}
+.toggle.checked{
+  color:var(--ink);
+  background:rgba(var(--accent),.12);
+  border-color:rgba(var(--accent),.5)}
+.info{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);left:50%;transform:translateX(-50%);
+  z-index:4;color:var(--dim);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  font-style:italic;pointer-events:none;text-align:center;line-height:1.6;padding:0 16px}
+.info b{color:var(--mute);font-weight:400}
+.compose{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
+  transform:translateX(-50%);z-index:3;
+  width:min(480px,calc(100% - 36px));
+  display:flex;gap:8px;align-items:center;
+  background:rgba(10,14,26,.82);backdrop-filter:blur(14px);
+  border:1px solid var(--line);border-radius:999px;
+  padding:8px 8px 8px 20px;
+  box-shadow:0 18px 50px -20px rgba(0,0,0,.9);
+  transition:opacity .4s ease,border-color .4s ease}
+.compose.armed{border-color:rgba(var(--accent),.55);box-shadow:0 0 40px -6px rgba(var(--accent),.28)}
+.compose input{flex:1;background:none;border:0;outline:none;color:var(--ink);
+  font:300 15px/1.4 inherit;padding:8px 0;min-width:0}
+.compose input::placeholder{color:var(--dim);font-style:italic}
+.compose button{font:inherit;cursor:pointer;
+  padding:9px 20px;border-radius:999px;
+  font-size:13px;letter-spacing:.08em;color:#e8eeff;
+  border:1px solid rgba(var(--accent),.4);
+  background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.05));
+  transition:box-shadow .4s,border-color .4s,transform .2s,opacity .4s;
+  white-space:nowrap}
+.compose button:hover:not(:disabled){box-shadow:0 0 22px rgba(var(--accent),.3);border-color:rgba(var(--accent),.75)}
+.compose button:active:not(:disabled){transform:scale(.97)}
+.compose button:disabled{opacity:.35;cursor:default}
+.overlay{position:fixed;z-index:6;display:none;
+  padding:8px;border-radius:14px;
+  background:rgba(12,16,30,.96);backdrop-filter:blur(12px);
+  border:1px solid rgba(var(--accent),.55);
+  box-shadow:0 12px 40px -10px rgba(0,0,0,.9),0 0 32px -12px rgba(var(--accent),.4);
+  gap:8px;align-items:center}
+.overlay.show{display:flex}
+.overlay.edit{z-index:8}
+.overlay .label{
+  color:var(--dim);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  font-style:italic;padding:0 4px 0 6px;white-space:nowrap}
+.overlay input{background:none;border:0;outline:none;color:var(--ink);
+  font:300 14px/1.4 inherit;padding:6px 10px;min-width:180px}
+.overlay input::placeholder{color:var(--dim);font-style:italic}
+.overlay button{font:inherit;cursor:pointer;padding:6px 14px;border-radius:999px;
+  font-size:12px;letter-spacing:.06em;color:#e8eeff;
+  border:1px solid rgba(var(--accent),.4);
+  background:rgba(var(--accent),.12);
+  transition:background .3s,border-color .3s}
+.overlay button:hover{background:rgba(var(--accent),.22);border-color:rgba(var(--accent),.7)}
+.overlay button.ghost{background:none;color:var(--mute);border-color:var(--line)}
+.ctx{position:fixed;z-index:9;display:none;flex-direction:column;
+  padding:4px;min-width:150px;
+  background:rgba(12,16,30,.97);backdrop-filter:blur(12px);
+  border:1px solid rgba(var(--accent),.45);border-radius:12px;
+  box-shadow:0 12px 40px -10px rgba(0,0,0,.9);
+  animation:ctxIn .14s ease}
+.ctx.show{display:flex}
+@keyframes ctxIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.ctx button{font:inherit;cursor:pointer;padding:8px 14px;
+  background:none;border:0;border-radius:8px;
+  color:var(--ink);font-size:13px;text-align:left;
+  display:flex;align-items:center;gap:10px;
+  transition:background .2s,color .2s}
+.ctx button:hover{background:rgba(var(--accent),.12)}
+.ctx button.danger:hover{background:rgba(255,120,120,.16);color:#ffc8c8}
+.ctx .ctx-icon{width:14px;height:14px;flex:none;opacity:.7}
+.ctx .sep{height:1px;margin:4px 6px;background:var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);
+  transform:translateX(-50%) translateY(6px);
+  padding:8px 18px;border-radius:999px;
+  background:rgba(10,14,26,.92);backdrop-filter:blur(8px);
+  border:1px solid rgba(var(--accent),.35);
+  color:#dce4fa;font-size:12.5px;letter-spacing:.04em;
+  opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;z-index:10;
+  font-style:italic;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.panel{position:fixed;top:0;right:0;z-index:7;
+  height:100vh;height:100dvh;
+  width:min(380px,92vw);
+  background:rgba(8,10,20,.94);backdrop-filter:blur(16px);
+  border-left:1px solid var(--line);
+  box-shadow:-30px 0 80px -30px rgba(0,0,0,.9);
+  transform:translateX(100%);
+  transition:transform .42s cubic-bezier(.2,.7,.3,1);
+  display:flex;flex-direction:column;
+  padding-top:calc(env(safe-area-inset-top,0px) + 8px);
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+.panel.open{transform:translateX(0)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--line)}
+.panel-head h2{margin:0;font-weight:300;font-size:15px;letter-spacing:.12em;
+  color:var(--ink);text-transform:uppercase}
+.panel-head .head-actions{display:flex;align-items:center;gap:8px}
+.panel-head .clear{font:inherit;cursor:pointer;
+  padding:5px 12px;border-radius:999px;
+  font-size:11px;letter-spacing:.08em;
+  color:var(--dim);background:none;
+  border:1px solid var(--line);
+  transition:color .3s,border-color .3s,background .3s,box-shadow .3s;
+  white-space:nowrap}
+.panel-head .clear:hover{color:#ffb4b4;border-color:rgba(255,140,140,.4)}
+.panel-head .clear.armed{
+  color:#ffc8c8;
+  border-color:rgba(255,120,120,.75);
+  background:rgba(255,120,120,.16);
+  box-shadow:0 0 18px rgba(255,120,120,.24)}
+.panel-head .close{width:30px;height:30px;border-radius:999px;
+  display:grid;place-items:center;background:none;border:1px solid var(--line);
+  color:var(--mute);cursor:pointer;font-size:17px;line-height:1;padding:0;
+  transition:color .3s,border-color .3s}
+.panel-head .close:hover{color:var(--ink);border-color:rgba(var(--accent),.5)}
+.panel-body{flex:1;overflow-y:auto;padding:10px 10px 14px}
+.panel-empty{color:var(--dim);font-size:13px;font-style:italic;
+  padding:40px 20px;text-align:center;line-height:1.7}
+.row{display:flex;gap:10px;align-items:flex-start;
+  padding:11px 12px;margin:4px 0;
+  border-radius:12px;cursor:pointer;
+  border:1px solid transparent;
+  transition:background .25s,border-color .25s}
+.row:hover{background:rgba(var(--accent),.06);border-color:rgba(var(--accent),.18)}
+.row.focused{background:rgba(255,225,160,.07);border-color:rgba(255,225,160,.28)}
+.star-dot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:6px;
+  background:var(--c,#9aa7c7);
+  box-shadow:0 0 10px var(--c,#9aa7c7),0 0 3px var(--c,#9aa7c7)}
+.row-main{flex:1;min-width:0}
+.row-text{font-size:14px;line-height:1.5;color:var(--ink);
+  word-break:break-word;margin:0 0 4px}
+.row-meta{font-size:10.5px;letter-spacing:.06em;color:var(--dim);
+  font-style:italic;text-transform:uppercase}
+.row-cluster{color:#e5d8a8;font-style:italic;text-transform:none;letter-spacing:.02em;font-size:11px;margin-left:6px}
+.row-actions{display:flex;gap:2px;flex:none;
+  opacity:0;transition:opacity .25s}
+.row:hover .row-actions{opacity:1}
+.row-actions button{
+  width:22px;height:22px;border-radius:999px;
+  display:grid;place-items:center;
+  background:none;border:1px solid transparent;
+  color:var(--dim);cursor:pointer;font-size:12px;line-height:1;padding:0;
+  transition:color .2s,border-color .2s,background .2s}
+.row-actions button:hover{color:var(--ink);border-color:rgba(var(--accent),.4);background:rgba(var(--accent),.08)}
+.row-actions button.del:hover{color:#ffb4b4;border-color:rgba(255,140,140,.5)}
+.panel-backdrop{position:fixed;inset:0;z-index:6;
+  background:rgba(2,3,8,.35);
+  opacity:0;pointer-events:none;transition:opacity .4s}
+.panel-backdrop.show{opacity:1;pointer-events:auto}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;animation-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+
+<div class="topright">
+  <button class="pill icon-only" id="muteBtn" aria-label="Mute sound" aria-pressed="false">
+    <svg class="w" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+      <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>
+    </svg>
+    <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/>
+      <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+    </svg>
+  </button>
+  <label class="pill toggle" id="showAllToggle">
+    <input type="checkbox" id="showAll">
+    Show all text
+  </label>
+  <button class="pill" id="allBtn" aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 6h16M4 12h16M4 18h10"/>
+    </svg>
+    All thoughts <span class="badge" id="countBadge">0</span>
+  </button>
+</div>
+
+<p class="info" id="info"></p>
+
+<div class="compose" id="compose">
+  <input id="thought" maxlength="140" placeholder="A thought to release into the sky…" autocomplete="off" aria-label="A thought to release">
+  <button id="go" disabled>Release</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <span class="label">Name</span>
+  <input id="nameInput" maxlength="40" placeholder="Name this constellation…" autocomplete="off">
+  <button id="nameSave">Save</button>
+  <button class="ghost" id="nameCancel">Cancel</button>
+</div>
+
+<div class="overlay edit" id="editOverlay">
+  <span class="label">Edit</span>
+  <input id="editInput" maxlength="140" placeholder="Edit this thought…" autocomplete="off">
+  <button id="editSave">Save</button>
+  <button class="ghost" id="editCancel">Cancel</button>
+</div>
+
+<div class="ctx" id="ctxMenu" role="menu" aria-hidden="true">
+  <button data-action="edit" role="menuitem">
+    <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/></svg>
+    Edit text
+  </button>
+  <button data-action="focus" role="menuitem">
+    <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+    Center on star
+  </button>
+  <div class="sep"></div>
+  <button data-action="delete" class="danger" role="menuitem">
+    <svg class="ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12"/></svg>
+    Delete star
+  </button>
+</div>
+
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+<div class="panel-backdrop" id="panelBackdrop"></div>
+<aside class="panel" id="panel" role="dialog" aria-label="All thoughts" aria-hidden="true">
+  <div class="panel-head">
+    <h2>All thoughts</h2>
+    <div class="head-actions">
+      <button class="clear" id="clearAll" aria-label="Clear all thoughts">Clear all</button>
+      <button class="close" id="panelClose" aria-label="Close">×</button>
+    </div>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</aside>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const canvas = $('#c'), ctx = canvas.getContext('2d');
+  const info = $('#info'), compose = $('#compose'), thoughtEl = $('#thought'), goBtn = $('#go');
+  const overlay = $('#overlay'), nameInput = $('#nameInput'), nameSave = $('#nameSave'), nameCancel = $('#nameCancel');
+  const editOverlay = $('#editOverlay'), editInput = $('#editInput'), editSave = $('#editSave'), editCancel = $('#editCancel');
+  const ctxMenu = $('#ctxMenu');
+  const toastEl = $('#toast');
+  const allBtn = $('#allBtn'), countBadge = $('#countBadge');
+  const showAllToggle = $('#showAllToggle'), showAllInput = $('#showAll');
+  const panel = $('#panel'), panelBody = $('#panelBody'), panelClose = $('#panelClose'), panelBackdrop = $('#panelBackdrop');
+  const clearAllBtn = $('#clearAll');
+  const muteBtn = $('#muteBtn');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==================== AUDIO ==================== */
+  let AC = null, master = null, ambient = null;
+  let muted = false;
+  try { muted = localStorage.getItem('constellation:muted') === '1'; } catch(e){}
+
+  function ensureAudio(){
+    if (!AC){
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      try { AC = new Ctx(); } catch(e){ return false; }
+      master = AC.createGain();
+      master.gain.value = muted ? 0 : .7;
+      master.connect(AC.destination);
+    }
+    if (AC.state !== 'running'){
+      const p = AC.resume();
+      if (p && p.catch) p.catch(()=>{});
+    }
+    return true;
+  }
+
+  // unlock on first user gesture
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+    addEventListener(ev, () => {
+      if (ensureAudio() && !ambient && stars.length > 0) startAmbient();
+      if (ambient) updateAmbient();
+    }, { passive: true }));
+
+  function playToneAt(freq, t, opts = {}){
+    if (!AC || muted) return;
+    const { type = 'sine', attack = .01, decay = .3, vol = .1, freqEnd = null, glideTime = null } = opts;
+    const o = AC.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (freqEnd != null){
+      o.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t + (glideTime || decay));
+    }
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + attack + decay + .2);
+  }
+  function playTone(opts){
+    if (!ensureAudio() || muted) return;
+    playToneAt(opts.freq, AC.currentTime, opts);
+  }
+  function playNoiseAt(t, opts = {}){
+    if (!AC || muted) return;
+    const { dur = .15, vol = .04, freq = 1500, q = 1, filterType = 'bandpass' } = opts;
+    const buf = AC.createBuffer(1, Math.max(1, Math.ceil(AC.sampleRate * dur)), AC.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = AC.createBufferSource(); src.buffer = buf;
+    const f = AC.createBiquadFilter(); f.type = filterType; f.frequency.value = freq; f.Q.value = q;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + .008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(master);
+    src.start(t); src.stop(t + dur + .05);
+  }
+  function playNoise(opts){
+    if (!ensureAudio() || muted) return;
+    playNoiseAt(AC.currentTime, opts);
+  }
+
+  function sfxBirth(){
+    if (!ensureAudio() || muted) return;
+    const t = AC.currentTime;
+    [523.25, 783.99, 1046.5].forEach((f, i) => {
+      playToneAt(f, t + i * .055, { type:'triangle', attack:.01, decay:.75, vol:.075 });
+    });
+    playNoiseAt(t, { dur:.35, vol:.02, freq:3200, q:.7 });
+  }
+  function sfxSelect(){
+    if (!ensureAudio() || muted) return;
+    playTone({ freq:1318.5, type:'sine', attack:.003, decay:.06, vol:.05 });
+    playNoise({ dur:.04, vol:.015, freq:2400, q:1.6 });
+  }
+  function sfxDeselect(){
+    if (!ensureAudio() || muted) return;
+    playTone({ freq:659.25, type:'sine', attack:.004, decay:.08, vol:.03 });
+  }
+  function sfxLink(){
+    if (!ensureAudio() || muted) return;
+    const t = AC.currentTime;
+    playToneAt(523.25, t, { type:'sine', attack:.015, decay:1.0, vol:.07 });
+    playToneAt(783.99, t, { type:'sine', attack:.02, decay:1.0, vol:.05 });
+    playToneAt(1046.5, t + .03, { type:'sine', attack:.02, decay:.9, vol:.035 });
+  }
+  function sfxName(){
+    if (!ensureAudio() || muted) return;
+    const t = AC.currentTime;
+    [523.25, 659.25, 783.99].forEach((f, i) => {
+      playToneAt(f, t + i * .07, { type:'sine', attack:.04, decay:1.2, vol:.055 });
+    });
+  }
+  function sfxDelete(){
+    if (!ensureAudio() || muted) return;
+    playTone({ freq:880, freqEnd:220, glideTime:.45, type:'sine', attack:.008, decay:.45, vol:.07 });
+    playNoise({ dur:.3, vol:.02, freq:900, q:.6 });
+  }
+  function sfxClear(){
+    if (!ensureAudio() || muted) return;
+    const t = AC.currentTime;
+    playToneAt(329.63, t, { freqEnd:60, glideTime:1.1, type:'sine', attack:.05, decay:1.1, vol:.13 });
+    playToneAt(220, t + .05, { freqEnd:41, glideTime:1.0, type:'triangle', attack:.06, decay:1.0, vol:.08 });
+    playNoiseAt(t, { dur:1.2, vol:.028, freq:400, q:.5, filterType:'lowpass' });
+  }
+  function sfxMenu(){
+    if (!ensureAudio() || muted) return;
+    playTone({ freq:1046.5, type:'sine', attack:.002, decay:.045, vol:.035 });
+  }
+  function sfxArm(){
+    if (!ensureAudio() || muted) return;
+    playTone({ freq:659.25, type:'sine', attack:.008, decay:.35, vol:.045 });
+    playTone({ freq:987.77, type:'sine', attack:.01, decay:.35, vol:.025 });
+  }
+
+  function startAmbient(){
+    if (!AC || ambient) return;
+    const t = AC.currentTime;
+    const g = AC.createGain(); g.gain.value = 0;
+    const o1 = AC.createOscillator(); o1.type = 'sine'; o1.frequency.value = 55;
+    const o2 = AC.createOscillator(); o2.type = 'sine'; o2.frequency.value = 82.5; o2.detune.value = 6;
+    const o3 = AC.createOscillator(); o3.type = 'sine'; o3.frequency.value = 110; o3.detune.value = -4;
+    const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 220; f.Q.value = .55;
+    const og1 = AC.createGain(); og1.gain.value = .55;
+    const og2 = AC.createGain(); og2.gain.value = .3;
+    const og3 = AC.createGain(); og3.gain.value = .16;
+    o1.connect(og1); o2.connect(og2); o3.connect(og3);
+    og1.connect(f); og2.connect(f); og3.connect(f);
+    f.connect(g); g.connect(master);
+    o1.start(t); o2.start(t); o3.start(t);
+    ambient = { g, f, o1, o2, o3 };
+  }
+  function updateAmbient(){
+    if (!ambient || !AC) return;
+    const n = stars.length;
+    const target = n === 0 ? 0 : Math.min(.055, .008 + n * .0045);
+    const t = AC.currentTime;
+    ambient.g.gain.setTargetAtTime(muted ? 0 : target, t, .9);
+    ambient.f.frequency.setTargetAtTime(200 + Math.min(200, n * 8), t, .9);
+  }
+
+  const paintMute = () => {
+    muteBtn.classList.toggle('muted', muted);
+    muteBtn.setAttribute('aria-pressed', String(muted));
+    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+  };
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    try { localStorage.setItem('constellation:muted', muted ? '1' : '0'); } catch(e){}
+    if (ensureAudio()){
+      master.gain.setTargetAtTime(muted ? 0 : .7, AC.currentTime, .05);
+      if (!ambient && stars.length > 0) startAmbient();
+      updateAmbient();
+    }
+    paintMute();
+  });
+
+  /* ==================== state ==================== */
+  let W = 0, H = 0, dpr = 1;
+
+  let stars = [];
+  let connections = [];
+  let clusters = {};
+
+  let camX = 0, camY = 0;
+  const zoom = 1;
+  let camTarget = null;
+
+  let placing = false;
+  let selectedStar = null;
+  let hoverStar = null;
+  let pointerDown = null;
+  let linkingAnimation = null;
+  let longPressTimer = 0;
+
+  let bursts = [];
+  let ripples = [];
+  let shooting = null;
+  let nextShooting = performance.now() + 8000 + Math.random() * 20000;
+
+  let nameTargetClusterKey = null;
+  let nameOverlayWorld = null;
+  let editingStarId = null;
+  let ctxStarId = null;
+
+  let showAllText = false;
+
+  let time = 0;
+
+  let sCluster = null;
+  let nameAffordances = [];
+  let labelHits = [];
+
+  /* ==================== persistence ==================== */
+  const KEY = 'constellation:v3';
+  const PREFS = 'constellation:prefs:v1';
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (raw && Array.isArray(raw.stars)){
+      stars = raw.stars.filter(s => s && typeof s.text === 'string' && Number.isFinite(s.x) && Number.isFinite(s.y))
+        .map(s => ({
+          id: s.id || (Date.now() + '-' + Math.random().toString(36).slice(2,7)),
+          x: s.x, y: s.y,
+          text: s.text, at: s.at || Date.now(),
+          hue: Number.isFinite(s.hue) ? s.hue : (Math.random() < .5 ? 210 : 260),
+          phase: s.phase != null ? s.phase : Math.random() * 6.28,
+          brightness: s.brightness != null ? s.brightness : .75
+        }));
+      connections = Array.isArray(raw.connections) ? raw.connections
+        .filter(c => c && typeof c.a === 'string' && typeof c.b === 'string')
+        .map(c => ({ a: c.a, b: c.b, t: 1 })) : [];
+      clusters = raw.clusters && typeof raw.clusters === 'object' ? raw.clusters : {};
+    }
+    const prefs = JSON.parse(localStorage.getItem(PREFS) || 'null');
+    if (prefs && typeof prefs === 'object'){
+      showAllText = !!prefs.showAllText;
+    }
+  } catch(e){ /* ignore */ }
+  const save = () => {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        stars: stars.map(s => ({ id:s.id, x:s.x, y:s.y, text:s.text, at:s.at, hue:s.hue, phase:s.phase, brightness:s.brightness })),
+        connections: connections.map(c => ({ a:c.a, b:c.b })),
+        clusters
+      }));
+    } catch(e){}
+  };
+  const savePrefs = () => {
+    try { localStorage.setItem(PREFS, JSON.stringify({ showAllText })); } catch(e){}
+  };
+
+  /* ==================== background ==================== */
+  const distantStars = [];
+  const nebulaClouds = [];
+  (function initField(){
+    const dn = calm ? 140 : 320;
+    for (let i = 0; i < dn; i++){
+      distantStars.push({
+        x: (Math.random() - .5) * 6000,
+        y: (Math.random() - .5) * 6000,
+        r: .3 + Math.random() * .9,
+        a: .25 + Math.random() * .5,
+        par: .35 + Math.random() * .3
+      });
+    }
+    const clouds = [
+      { x: -500, y: -300, r: 900, c: [70, 90, 180], a: .09 },
+      { x:  700, y:  400, r: 1100, c: [130, 80, 190], a: .07 },
+      { x: -200, y:  700, r: 800, c: [60, 130, 180], a: .08 },
+      { x:  500, y: -700, r: 700, c: [110, 80, 160], a: .06 }
+    ];
+    for (const c of clouds) nebulaClouds.push(c);
+  })();
+
+  /* ==================== canvas sizing ==================== */
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    positionNameOverlay();
+    positionEditOverlay();
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  /* ==================== coordinate helpers ==================== */
+  const worldToScreen = (wx, wy) => ({
+    x: (wx - camX) * zoom + W / 2,
+    y: (wy - camY) * zoom + H / 2
+  });
+  const screenToWorld = (sx, sy) => ({
+    x: (sx - W / 2) / zoom + camX,
+    y: (sy - H / 2) / zoom + camY
+  });
+
+  /* ==================== colours ==================== */
+  function starColors(hue){
+    const h = ((hue % 360) + 360) % 360;
+    return {
+      c1: `hsla(${h}, 70%, 92%, 1)`,
+      c2: `hsla(${h}, 75%, 75%, .9)`,
+      c3: `hsla(${h}, 80%, 60%, .35)`,
+      c4: `hsla(${h}, 80%, 55%, 0)`
+    };
+  }
+  function cssHueColor(hue, alpha){
+    const h = ((hue % 360) + 360) % 360;
+    return `hsla(${h}, 80%, 75%, ${alpha})`;
+  }
+
+  /* ==================== star operations ==================== */
+  function findStarAt(wx, wy){
+    let best = null, bestD = Infinity;
+    for (const s of stars){
+      const dx = s.x - wx, dy = s.y - wy;
+      const d = dx*dx + dy*dy;
+      if (d < bestD && d < 24 * 24){ best = s; bestD = d; }
+    }
+    return best;
+  }
+
+  function addStar(wx, wy, text){
+    const s = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      x: wx, y: wy, text,
+      at: Date.now(),
+      hue: 190 + Math.random() * 120,
+      phase: Math.random() * 6.28,
+      brightness: .8
+    };
+    stars.push(s);
+    ripples.push({ x: wx, y: wy, r: 4, max: 90, life: 1 });
+    for (let i = 0; i < 14; i++){
+      const a = Math.random() * 6.28;
+      const sp = 6 + Math.random() * 18;
+      bursts.push({ x: wx, y: wy, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp, life: 1, hue: s.hue });
+    }
+    sfxBirth();
+    save(); refreshInfo(); refreshPanel();
+    return s;
+  }
+
+  function editStarText(id, newText){
+    const s = stars.find(x => x.id === id);
+    if (!s) return;
+    s.text = newText;
+    save(); refreshInfo(); refreshPanel();
+  }
+
+  function removeStar(id, skipSound){
+    const before = stars.length;
+    stars = stars.filter(s => s.id !== id);
+    if (stars.length === before) return;
+    connections = connections.filter(c => c.a !== id && c.b !== id);
+    for (const key of Object.keys(clusters)){
+      if (!stars.find(s => s.id === key)) delete clusters[key];
+    }
+    if (selectedStar === id) selectedStar = null;
+    if (hoverStar === id) hoverStar = null;
+    if (editingStarId === id) closeEditor();
+    if (!skipSound) sfxDelete();
+    save(); refreshInfo(); refreshPanel();
+  }
+
+  function removeAllStars(){
+    const n = stars.length;
+    stars = [];
+    connections = [];
+    clusters = {};
+    selectedStar = null;
+    hoverStar = null;
+    closeEditor();
+    closeNamer();
+    save(); refreshInfo(); refreshPanel();
+    return n;
+  }
+
+  function connect(aId, bId){
+    if (aId === bId) return;
+    const exists = connections.find(c => (c.a === aId && c.b === bId) || (c.a === bId && c.b === aId));
+    if (exists) return;
+    connections.push({ a: aId, b: bId, t: 0 });
+    sfxLink();
+    save(); refreshInfo(); refreshPanel();
+  }
+
+  function components(){
+    const adj = new Map();
+    for (const s of stars) adj.set(s.id, new Set());
+    for (const c of connections){
+      if (adj.has(c.a) && adj.has(c.b)){
+        adj.get(c.a).add(c.b);
+        adj.get(c.b).add(c.a);
+      }
+    }
+    const seen = new Set();
+    const comps = [];
+    for (const s of stars){
+      if (seen.has(s.id)) continue;
+      const queue = [s.id];
+      const members = [];
+      while (queue.length){
+        const id = queue.pop();
+        if (seen.has(id)) continue;
+        seen.add(id);
+        members.push(id);
+        for (const nb of adj.get(id) || []) if (!seen.has(nb)) queue.push(nb);
+      }
+      comps.push(members);
+    }
+    return comps;
+  }
+
+  function clusterKey(members){
+    let oldest = null, oldestAt = Infinity;
+    for (const id of members){
+      const s = stars.find(x => x.id === id);
+      if (!s) continue;
+      if (s.at < oldestAt){ oldestAt = s.at; oldest = id; }
+    }
+    return oldest;
+  }
+
+  function centroid(members){
+    let sx = 0, sy = 0, n = 0;
+    for (const id of members){
+      const s = stars.find(x => x.id === id);
+      if (!s) continue;
+      sx += s.x; sy += s.y; n++;
+    }
+    return n ? { x: sx/n, y: sy/n } : null;
+  }
+
+  function clusterForStar(starId){
+    for (const members of components()){
+      if (members.includes(starId) && members.length >= 3){
+        return { key: clusterKey(members), members };
+      }
+    }
+    return null;
+  }
+
+  /* ==================== info / toast ==================== */
+  function refreshInfo(){
+    const n = stars.length;
+    const named = Object.keys(clusters).filter(k => clusters[k]).length;
+    if (n === 0){
+      info.innerHTML = '<b>An empty sky.</b> Type a thought below.';
+    } else {
+      info.innerHTML = `<b>${n}</b> star${n===1?'':'s'} · <b>${connections.length}</b> link${connections.length===1?'':'s'}${named ? ` · <b>${named}</b> named` : ''}`;
+    }
+    countBadge.textContent = String(n);
+
+    // ambient drone tracks star count
+    if (AC && !ambient && stars.length > 0) startAmbient();
+    updateAmbient();
+  }
+  let toastT = 0;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => toastEl.classList.remove('show'), 2400);
+  }
+
+  /* ==================== naming ==================== */
+  function openNamerFor(key, world){
+    closeEditor(); hideCtxMenu();
+    nameTargetClusterKey = key;
+    nameOverlayWorld = world;
+    nameInput.value = clusters[key] || '';
+    overlay.classList.add('show');
+    positionNameOverlay();
+    setTimeout(() => { try { nameInput.focus({preventScroll:true}); nameInput.select(); } catch(_){} }, 30);
+  }
+  function positionNameOverlay(){
+    if (!nameOverlayWorld || !overlay.classList.contains('show')) return;
+    const sc = worldToScreen(nameOverlayWorld.x, nameOverlayWorld.y);
+    const r = overlay.getBoundingClientRect();
+    const w = r.width || 300;
+    const h = r.height || 40;
+    let x = sc.x - w/2;
+    let y = sc.y - h - 24;
+    x = Math.max(8, Math.min(W - w - 8, x));
+    y = Math.max(8, Math.min(H - h - 8, y));
+    overlay.style.left = x + 'px';
+    overlay.style.top = y + 'px';
+  }
+  function closeNamer(){
+    overlay.classList.remove('show');
+    nameTargetClusterKey = null;
+    nameOverlayWorld = null;
+  }
+  nameSave.addEventListener('click', () => {
+    let did = false;
+    if (nameTargetClusterKey){
+      const v = nameInput.value.trim();
+      if (v) clusters[nameTargetClusterKey] = v;
+      else delete clusters[nameTargetClusterKey];
+      save(); refreshInfo(); refreshPanel();
+      did = true;
+    }
+    closeNamer();
+    if (did) sfxName();
+  });
+  nameCancel.addEventListener('click', closeNamer);
+  nameInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); nameSave.click(); }
+    if (e.key === 'Escape'){ e.preventDefault(); closeNamer(); }
+  });
+
+  /* ==================== editing ==================== */
+  function openEditorFor(starId){
+    const s = stars.find(x => x.id === starId);
+    if (!s) return;
+    closeNamer(); hideCtxMenu();
+    editingStarId = starId;
+    editInput.value = s.text;
+    editOverlay.classList.add('show');
+    positionEditOverlay();
+    setTimeout(() => { try { editInput.focus({preventScroll:true}); editInput.select(); } catch(_){} }, 30);
+  }
+  function positionEditOverlay(){
+    if (!editingStarId || !editOverlay.classList.contains('show')) return;
+    const s = stars.find(x => x.id === editingStarId);
+    if (!s) return;
+    const p = worldToScreen(s.x, s.y);
+    const r = editOverlay.getBoundingClientRect();
+    const w = r.width || 320;
+    const h = r.height || 40;
+    let x = p.x - w/2;
+    let y = p.y - h - 40;
+    x = Math.max(8, Math.min(W - w - 8, x));
+    y = Math.max(8, Math.min(H - h - 8, y));
+    editOverlay.style.left = x + 'px';
+    editOverlay.style.top = y + 'px';
+  }
+  function closeEditor(){
+    editOverlay.classList.remove('show');
+    editingStarId = null;
+  }
+  editSave.addEventListener('click', () => {
+    const v = editInput.value.trim();
+    if (editingStarId && v){
+      editStarText(editingStarId, v);
+      toast('Updated.');
+      playTone({ freq:659.25, type:'sine', attack:.006, decay:.15, vol:.04 });
+    }
+    closeEditor();
+  });
+  editCancel.addEventListener('click', closeEditor);
+  editInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); editSave.click(); }
+    if (e.key === 'Escape'){ e.preventDefault(); closeEditor(); }
+  });
+
+  /* ==================== context menu ==================== */
+  function showCtxMenu(starId, sx, sy){
+    ctxStarId = starId;
+    ctxMenu.classList.add('show');
+    ctxMenu.setAttribute('aria-hidden', 'false');
+    const r = ctxMenu.getBoundingClientRect();
+    let x = sx, y = sy;
+    if (x + r.width > W - 10) x = W - r.width - 10;
+    if (y + r.height > H - 10) y = H - r.height - 10;
+    x = Math.max(10, x);
+    y = Math.max(10, y);
+    ctxMenu.style.left = x + 'px';
+    ctxMenu.style.top = y + 'px';
+    sfxMenu();
+  }
+  function hideCtxMenu(){
+    if (!ctxMenu.classList.contains('show')) return;
+    ctxMenu.classList.remove('show');
+    ctxMenu.setAttribute('aria-hidden', 'true');
+    ctxStarId = null;
+  }
+  ctxMenu.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const action = btn.dataset.action;
+      const id = ctxStarId;
+      hideCtxMenu();
+      if (!id) return;
+      if (action === 'edit'){
+        openEditorFor(id);
+      } else if (action === 'delete'){
+        const s = stars.find(x => x.id === id);
+        if (s && confirm('Delete this thought?')){
+          removeStar(id);
+          toast('Deleted.');
+        }
+      } else if (action === 'focus'){
+        focusOnStar(id);
+      }
+    });
+  });
+  document.addEventListener('pointerdown', e => {
+    if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu();
+  }, true);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') hideCtxMenu();
+  });
+
+  /* ==================== show-all toggle ==================== */
+  showAllInput.checked = showAllText;
+  showAllToggle.classList.toggle('checked', showAllText);
+  showAllInput.addEventListener('change', () => {
+    showAllText = showAllInput.checked;
+    showAllToggle.classList.toggle('checked', showAllText);
+    savePrefs();
+    playTone({ freq: showAllText ? 880 : 660, type:'sine', attack:.005, decay:.12, vol:.035 });
+  });
+
+  /* ==================== panel ==================== */
+  let clearArmedT = 0;
+  function disarmClear(){
+    clearTimeout(clearArmedT);
+    clearAllBtn.classList.remove('armed');
+    clearAllBtn.textContent = 'Clear all';
+    clearAllBtn.setAttribute('aria-label', 'Clear all thoughts');
+  }
+  function openPanel(){
+    panel.classList.add('open');
+    panel.setAttribute('aria-expanded', 'true');
+    panelBackdrop.classList.add('show');
+    allBtn.setAttribute('aria-expanded', 'true');
+    refreshPanel();
+  }
+  function closePanel(){
+    disarmClear();
+    panel.classList.remove('open');
+    panel.setAttribute('aria-expanded', 'false');
+    panelBackdrop.classList.remove('show');
+    allBtn.setAttribute('aria-expanded', 'false');
+  }
+  allBtn.addEventListener('click', () => {
+    if (panel.classList.contains('open')) closePanel();
+    else openPanel();
+  });
+  panelClose.addEventListener('click', closePanel);
+  panelBackdrop.addEventListener('click', closePanel);
+
+  clearAllBtn.addEventListener('click', () => {
+    if (stars.length === 0){ toast('Nothing to clear.'); return; }
+    if (!clearAllBtn.classList.contains('armed')){
+      clearAllBtn.classList.add('armed');
+      clearAllBtn.textContent = `Confirm · ${stars.length}?`;
+      clearAllBtn.setAttribute('aria-label', `Confirm: delete all ${stars.length} stars`);
+      clearTimeout(clearArmedT);
+      clearArmedT = setTimeout(disarmClear, 3500);
+      return;
+    }
+    disarmClear();
+    const n = removeAllStars();
+    sfxClear();
+    toast(`Cleared ${n} star${n===1?'':'s'}.`);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){
+      if (panel.classList.contains('open')) closePanel();
+      else if (editOverlay.classList.contains('show')) closeEditor();
+      else if (overlay.classList.contains('show')) closeNamer();
+    }
+  });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  function refreshPanel(){
+    if (stars.length === 0){
+      panelBody.innerHTML = '<p class="panel-empty">Nothing up here yet.<br>Write something below and place a star.</p>';
+      return;
+    }
+    const sorted = stars.slice().sort((a,b) => b.at - a.at);
+    panelBody.innerHTML = sorted.map(s => {
+      const cluster = clusterForStar(s.id);
+      const clusterName = cluster ? clusters[cluster.key] : null;
+      const isFocused = s.id === selectedStar;
+      const date = new Date(s.at).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+      return `<div class="row ${isFocused ? 'focused' : ''}" data-id="${s.id}">
+        <span class="star-dot" style="--c:${cssHueColor(s.hue, .9)}"></span>
+        <div class="row-main">
+          <p class="row-text">${escapeHtml(s.text)}</p>
+          <p class="row-meta">${date}${clusterName ? `<span class="row-cluster">· ${escapeHtml(clusterName)}</span>` : ''}</p>
+        </div>
+        <div class="row-actions">
+          <button data-edit="${s.id}" aria-label="Edit" title="Edit">✎</button>
+          <button class="del" data-del="${s.id}" aria-label="Delete" title="Delete">×</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    panelBody.querySelectorAll('.row').forEach(el => {
+      el.addEventListener('click', e => {
+        if (e.target.closest('[data-edit]') || e.target.closest('[data-del]')) return;
+        focusOnStar(el.dataset.id);
+        closePanel();
+      });
+    });
+    panelBody.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        openEditorFor(btn.dataset.edit);
+      });
+    });
+    panelBody.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = btn.dataset.del;
+        if (confirm('Delete this thought?')) removeStar(id);
+      });
+    });
+  }
+
+  function focusOnStar(id){
+    const s = stars.find(x => x.id === id);
+    if (!s) return;
+    camTarget = { x: s.x, y: s.y };
+    selectedStar = id;
+  }
+
+  /* ==================== pointer ==================== */
+  canvas.addEventListener('pointerdown', e => {
+    if (e.button === 2) return;
+    hideCtxMenu();
+
+    const world = screenToWorld(e.clientX, e.clientY);
+    const star = findStarAt(world.x, world.y);
+    camTarget = null;
+
+    pointerDown = {
+      sx: e.clientX, sy: e.clientY,
+      camX, camY,
+      world,
+      starId: star ? star.id : null,
+      moved: false,
+      t: performance.now()
+    };
+    canvas.classList.add('grabbing');
+    try { canvas.setPointerCapture(e.pointerId); } catch(_){}
+
+    clearTimeout(longPressTimer);
+    if (star){
+      const starId = star.id;
+      const sx = e.clientX, sy = e.clientY;
+      longPressTimer = setTimeout(() => {
+        if (pointerDown && !pointerDown.moved && pointerDown.starId === starId){
+          pointerDown = null;
+          canvas.classList.remove('grabbing');
+          try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+          showCtxMenu(starId, sx, sy);
+        }
+      }, 550);
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!pointerDown){
+      const w = screenToWorld(e.clientX, e.clientY);
+      const s = findStarAt(w.x, w.y);
+      const prev = hoverStar;
+      hoverStar = s ? s.id : null;
+      if (prev !== hoverStar) canvas.classList.toggle('star', !!hoverStar);
+      return;
+    }
+
+    const dx = e.clientX - pointerDown.sx;
+    const dy = e.clientY - pointerDown.sy;
+    if (!pointerDown.moved && Math.hypot(dx, dy) > 5){
+      pointerDown.moved = true;
+      clearTimeout(longPressTimer);
+    }
+
+    if (pointerDown.moved){
+      if (pointerDown.starId){
+        const w = screenToWorld(e.clientX, e.clientY);
+        const s = stars.find(x => x.id === pointerDown.starId);
+        if (s){ s.x = w.x; s.y = w.y; }
+      } else {
+        camX = pointerDown.camX - dx / zoom;
+        camY = pointerDown.camY - dy / zoom;
+      }
+    } else if (selectedStar){
+      const a = stars.find(x => x.id === selectedStar);
+      if (a){
+        const w = screenToWorld(e.clientX, e.clientY);
+        linkingAnimation = { from: a, toX: w.x, toY: w.y };
+      }
+    }
+  });
+
+  function hitLabel(sx, sy){
+    for (const r of labelHits){
+      if (sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h) return r.starId;
+    }
+    return null;
+  }
+
+  function endPointer(e){
+    clearTimeout(longPressTimer);
+    if (!pointerDown) return;
+    canvas.classList.remove('grabbing');
+    try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+
+    const held = performance.now() - pointerDown.t;
+    const wasMoved = pointerDown.moved;
+    const starId = pointerDown.starId;
+    const world = pointerDown.world;
+    const clickX = e.clientX, clickY = e.clientY;
+    pointerDown = null;
+    linkingAnimation = null;
+
+    if (wasMoved){
+      if (starId) save();
+      return;
+    }
+    if (held > 600) return;
+
+    for (const a of nameAffordances){
+      if (Math.hypot(clickX - a.x, clickY - a.y) < a.r + 8){
+        openNamerFor(a.key, a.world);
+        return;
+      }
+    }
+    if (sCluster){
+      const dx = Math.abs(clickX - sCluster.x);
+      const dy = Math.abs(clickY - sCluster.y);
+      if (dx < sCluster.w / 2 + 6 && dy < 16){
+        openNamerFor(sCluster.key, sCluster.world);
+        return;
+      }
+    }
+
+    const labelId = hitLabel(clickX, clickY);
+    if (labelId){
+      openEditorFor(labelId);
+      return;
+    }
+
+    if (placing){
+      addStar(world.x, world.y, thoughtEl.value.trim());
+      thoughtEl.value = '';
+      goBtn.disabled = true;
+      placing = false;
+      compose.classList.remove('armed');
+      canvas.classList.remove('placing');
+      selectedStar = stars[stars.length - 1].id;
+      toast('Star placed. Click another star to connect.');
+      return;
+    }
+
+    if (starId){
+      if (!selectedStar){
+        selectedStar = starId;
+        sfxSelect();
+      } else if (selectedStar === starId){
+        selectedStar = null;
+        sfxDeselect();
+      } else {
+        connect(selectedStar, starId);
+        toast('Linked.');
+        selectedStar = null;
+      }
+    } else {
+      if (selectedStar){ selectedStar = null; sfxDeselect(); }
+    }
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  canvas.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    const world = screenToWorld(e.clientX, e.clientY);
+    const s = findStarAt(world.x, world.y);
+    if (!s){ hideCtxMenu(); return; }
+    showCtxMenu(s.id, e.clientX, e.clientY);
+  });
+
+  /* ==================== compose bar ==================== */
+  thoughtEl.addEventListener('input', () => {
+    const ok = !!thoughtEl.value.trim();
+    goBtn.disabled = !ok;
+    if (!ok && placing){
+      placing = false;
+      compose.classList.remove('armed');
+      canvas.classList.remove('placing');
+    }
+  });
+  thoughtEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); armPlacement(); }
+    if (e.key === 'Escape'){ placing = false; compose.classList.remove('armed'); canvas.classList.remove('placing'); }
+  });
+  goBtn.addEventListener('click', armPlacement);
+
+  function armPlacement(){
+    if (!thoughtEl.value.trim()) return;
+    hideCtxMenu();
+    placing = true;
+    compose.classList.add('armed');
+    canvas.classList.add('placing');
+    sfxArm();
+    toast('Click the sky to place your star.');
+  }
+
+  /* ==================== effects ==================== */
+  function stepFX(dt){
+    for (let i = ripples.length - 1; i >= 0; i--){
+      const r = ripples[i];
+      r.r += (r.max - r.r) * .05 * dt;
+      r.life -= .02 * dt;
+      if (r.life <= 0) ripples.splice(i, 1);
+    }
+    for (let i = bursts.length - 1; i >= 0; i--){
+      const b = bursts[i];
+      b.life -= .014 * dt;
+      if (b.life <= 0){ bursts.splice(i, 1); continue; }
+      b.vx *= .94; b.vy *= .94;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+    }
+    for (const c of connections){
+      if (c.t < 1) c.t = Math.min(1, c.t + .035 * dt);
+    }
+
+    if (camTarget){
+      camX += (camTarget.x - camX) * .08 * dt;
+      camY += (camTarget.y - camY) * .08 * dt;
+      if (Math.hypot(camTarget.x - camX, camTarget.y - camY) < 1) camTarget = null;
+    }
+
+    const now = performance.now();
+    if (!shooting && now > nextShooting && !calm){
+      const fromLeft = Math.random() < .5;
+      shooting = {
+        x: fromLeft ? -80 : W + 80,
+        y: 60 + Math.random() * (H * .4),
+        vx: (fromLeft ? 1 : -1) * (10 + Math.random() * 6),
+        vy: 3 + Math.random() * 3,
+        life: 1
+      };
+    }
+    if (shooting){
+      shooting.x += shooting.vx * dt;
+      shooting.y += shooting.vy * dt;
+      shooting.life -= .006 * dt;
+      if (shooting.life <= 0 || shooting.x < -200 || shooting.x > W + 200){
+        shooting = null;
+        nextShooting = now + 12000 + Math.random() * 25000;
+      }
+    }
+  }
+
+  /* ==================== rendering ==================== */
+  function draw(){
+    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * .85);
+    bg.addColorStop(0, '#0a0d1e');
+    bg.addColorStop(1, '#04050d');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (const n of nebulaClouds){
+      const sc = worldToScreen(n.x, n.y);
+      const rr = n.r * zoom;
+      if (sc.x + rr < 0 || sc.x - rr > W || sc.y + rr < 0 || sc.y - rr > H) continue;
+      const g = ctx.createRadialGradient(sc.x, sc.y, 0, sc.x, sc.y, rr);
+      g.addColorStop(0, `rgba(${n.c[0]},${n.c[1]},${n.c[2]},${n.a})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sc.x, sc.y, rr, 0, 6.28); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.fillStyle = 'rgb(200, 215, 245)';
+    for (const d of distantStars){
+      const sx = (d.x - camX * d.par) * zoom + W/2;
+      const sy = (d.y - camY * d.par) * zoom + H/2;
+      if (sx < -4 || sx > W+4 || sy < -4 || sy > H+4) continue;
+      ctx.globalAlpha = d.a;
+      ctx.fillRect(sx, sy, d.r, d.r);
+    }
+    ctx.globalAlpha = 1;
+
+    for (const c of connections){
+      const a = stars.find(s => s.id === c.a);
+      const b = stars.find(s => s.id === c.b);
+      if (!a || !b) continue;
+      const pa = worldToScreen(a.x, a.y);
+      const pb = worldToScreen(b.x, b.y);
+      const tipX = pa.x + (pb.x - pa.x) * c.t;
+      const tipY = pa.y + (pb.y - pa.y) * c.t;
+      drawLink(pa.x, pa.y, tipX, tipY, a.hue, b.hue, c.t);
+    }
+
+    if (linkingAnimation){
+      const a = linkingAnimation.from;
+      const pa = worldToScreen(a.x, a.y);
+      const pb = worldToScreen(linkingAnimation.toX, linkingAnimation.toY);
+      ctx.save();
+      ctx.globalAlpha = .55;
+      drawLink(pa.x, pa.y, pb.x, pb.y, a.hue, a.hue, 1, true);
+      ctx.restore();
+    }
+
+    for (const s of stars){
+      const p = worldToScreen(s.x, s.y);
+      if (p.x < -60 || p.x > W + 60 || p.y < -60 || p.y > H + 60) continue;
+      drawStar(s, p.x, p.y, s.id === hoverStar, s.id === selectedStar);
+    }
+
+    sCluster = null;
+    nameAffordances = [];
+    labelHits = [];
+
+    if (showAllText){
+      const placed = [];
+      const sorted = stars.slice().sort((a,b) => {
+        const pa = priority(a.id), pb = priority(b.id);
+        if (pa !== pb) return pb - pa;
+        return b.at - a.at;
+      });
+      for (const s of sorted){
+        if (s.id === selectedStar || s.id === hoverStar) continue;
+        const p = worldToScreen(s.x, s.y);
+        if (p.x < 40 || p.x > W - 40 || p.y < 30 || p.y > H - 40) continue;
+        const rect = labelRectFor(s.text, p.x, p.y + 26);
+        let overlaps = false;
+        for (const r of placed){
+          if (!(rect.x + rect.w < r.x || rect.x > r.x + r.w ||
+                rect.y + rect.h < r.y || rect.y > r.y + r.h)){
+            overlaps = true; break;
+          }
+        }
+        if (overlaps) continue;
+        placed.push(rect);
+        drawStarLabelAt(s.text, rect, true);
+        labelHits.push({ ...rect, starId: s.id });
+      }
+    }
+
+    if (selectedStar){
+      const s = stars.find(x => x.id === selectedStar);
+      if (s){
+        const p = worldToScreen(s.x, s.y);
+        const rect = labelRectFor(s.text, p.x, p.y + 26);
+        drawStarLabelAt(s.text, rect, false, true);
+        labelHits.push({ ...rect, starId: s.id });
+      }
+    } else if (hoverStar){
+      const s = stars.find(x => x.id === hoverStar);
+      if (s){
+        const p = worldToScreen(s.x, s.y);
+        const rect = labelRectFor(s.text, p.x, p.y + 26);
+        drawStarLabelAt(s.text, rect, true, false);
+        labelHits.push({ ...rect, starId: s.id });
+      }
+    }
+
+    const comps = components();
+    for (const members of comps){
+      if (members.length < 3) continue;
+      const c = centroid(members);
+      if (!c) continue;
+      const p = worldToScreen(c.x, c.y);
+      const key = clusterKey(members);
+      const name = clusters[key];
+      const sc = { x: p.x, y: p.y - 34 };
+
+      if (name){
+        drawClusterName(name, sc.x, sc.y);
+        sCluster = { x: sc.x, y: sc.y, w: Math.max(80, name.length * 9 + 30), h: 24, key, world: c };
+      } else {
+        drawNameAffordance(sc.x, sc.y, key, c);
+      }
+    }
+
+    for (const r of ripples){
+      const p = worldToScreen(r.x, r.y);
+      ctx.globalAlpha = r.life;
+      ctx.strokeStyle = `rgba(200,220,255,${r.life * .6})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r.r * zoom, 0, 6.28);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const b of bursts){
+      const p = worldToScreen(b.x, b.y);
+      ctx.globalAlpha = b.life;
+      ctx.fillStyle = `hsla(${b.hue}, 80%, 85%, ${b.life})`;
+      ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    if (shooting){
+      ctx.globalCompositeOperation = 'lighter';
+      const { x, y, vx, vy, life } = shooting;
+      const len = 80;
+      const mag = Math.hypot(vx, vy) || 1;
+      const tx = x - (vx / mag) * len;
+      const ty = y - (vy / mag) * len;
+      const g = ctx.createLinearGradient(x, y, tx, ty);
+      g.addColorStop(0, `rgba(255,255,255,${life * .9})`);
+      g.addColorStop(.5, `rgba(200,220,255,${life * .3})`);
+      g.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  function priority(id){
+    if (id === selectedStar) return 3;
+    if (id === hoverStar) return 2;
+    if (id === editingStarId) return 2;
+    return 1;
+  }
+
+  function drawLink(ax, ay, bx, by, ha, hb, t, dashed){
+    ctx.save();
+    if (dashed) ctx.setLineDash([4, 6]);
+    const g = ctx.createLinearGradient(ax, ay, bx, by);
+    g.addColorStop(0, starColors(ha).c2);
+    g.addColorStop(1, starColors(hb).c2);
+    ctx.strokeStyle = g;
+    ctx.globalAlpha = (.55 + .35 * t);
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = .15 * t;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore();
+  }
+
+  const starSpriteCache = new Map();
+  function getStarSprite(hue){
+    const bucket = Math.round(hue / 15) * 15;
+    if (starSpriteCache.has(bucket)) return starSpriteCache.get(bucket);
+    const size = 64;
+    const o = document.createElement('canvas');
+    o.width = size; o.height = size;
+    const c = o.getContext('2d');
+    const col = starColors(bucket);
+    const g = c.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+    g.addColorStop(0, col.c1);
+    g.addColorStop(.14, col.c2);
+    g.addColorStop(.4, col.c3);
+    g.addColorStop(1, col.c4);
+    c.fillStyle = g;
+    c.fillRect(0, 0, size, size);
+    starSpriteCache.set(bucket, o);
+    return o;
+  }
+
+  function drawStar(s, x, y, hovered, selected){
+    const tw = calm ? .9 : (.86 + .14 * Math.sin(time * .9 + s.phase));
+    const baseR = 3 + s.brightness * 1.5;
+    const coreR = baseR * (hovered || selected ? 1.4 : 1) * tw;
+    const sprite = getStarSprite(s.hue);
+    const drawR = coreR * 6;
+    ctx.globalAlpha = .9;
+    ctx.drawImage(sprite, x - drawR, y - drawR, drawR * 2, drawR * 2);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = `rgba(255,255,255,${.85 * tw})`;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(1, baseR * .55), 0, 6.28);
+    ctx.fill();
+
+    if (hovered && !selected){
+      ctx.strokeStyle = `hsla(${s.hue}, 80%, 80%, .7)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, coreR * 2.4, 0, 6.28);
+      ctx.stroke();
+    }
+
+    if (selected){
+      const p = .75 + .25 * Math.sin(time * 2.6);
+      ctx.strokeStyle = `rgba(255,225,160,${.75 * p})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(x, y, coreR * 2.6, 0, 6.28);
+      ctx.stroke();
+      for (let i = 0; i < 3; i++){
+        const a = time * 1.4 + i * 2.09;
+        const rr = coreR * 3.2;
+        ctx.fillStyle = `rgba(255,240,200,${.8})`;
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr, 1.3, 0, 6.28);
+        ctx.fill();
+      }
+    }
+  }
+
+  function labelRectFor(text, x, y){
+    ctx.font = '13px "Iowan Old Style","Palatino Linotype",Georgia,serif';
+    const pad = 8;
+    const w = ctx.measureText(text).width;
+    const bw = Math.min(W - 40, w + pad * 2);
+    const bh = 24;
+    const bx = Math.max(20, Math.min(W - 20, x)) - bw/2;
+    const by = y - bh/2;
+    return { x: bx, y: by, w: bw, h: bh };
+  }
+
+  function drawStarLabelAt(text, rect, dim, editable){
+    ctx.fillStyle = 'rgba(10,14,28,.85)';
+    roundRect(rect.x, rect.y, rect.w, rect.h, 12);
+    ctx.fill();
+    ctx.strokeStyle = editable
+      ? 'rgba(255,225,160,.45)'
+      : dim ? 'rgba(170,190,240,.12)' : 'rgba(200,220,255,.32)';
+    ctx.lineWidth = 1;
+    if (editable) ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    if (editable) ctx.setLineDash([]);
+
+    ctx.font = '13px "Iowan Old Style","Palatino Linotype",Georgia,serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const pad = 8;
+    let display = text;
+    while (ctx.measureText(display).width > rect.w - pad*2 && display.length > 1){
+      display = display.slice(0, -2) + '…';
+    }
+    ctx.fillStyle = dim ? 'rgba(200,210,235,.65)' : 'rgba(230,238,255,.95)';
+    ctx.fillText(display, rect.x + rect.w/2, rect.y + rect.h/2);
+
+    if (editable){
+      ctx.font = '10px "Iowan Old Style","Palatino Linotype",Georgia,serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,225,160,.7)';
+      ctx.fillText('✎ edit', rect.x + 6, rect.y + rect.h/2);
+    }
+  }
+
+  function drawClusterName(name, x, y){
+    ctx.font = 'italic 13px "Iowan Old Style","Palatino Linotype",Georgia,serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = .35;
+    ctx.fillStyle = 'rgba(255,235,200,0.8)';
+    ctx.fillText(name, x, y);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,240,205,0.95)';
+    ctx.fillText(name, x, y);
+    const w = ctx.measureText(name).width;
+    ctx.strokeStyle = 'rgba(255,225,170,.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - w/2, y + 9);
+    ctx.lineTo(x + w/2, y + 9);
+    ctx.stroke();
+  }
+
+  function drawNameAffordance(x, y, key, world){
+    const p = .7 + .3 * Math.sin(time * 3);
+    ctx.globalAlpha = .45 * p;
+    ctx.strokeStyle = 'rgba(200,220,255,1)';
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, 12, 0, 6.28);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = 'rgba(220,232,255,.9)';
+    ctx.fillRect(x - 4, y - .8, 8, 1.6);
+    ctx.fillRect(x - .8, y - 4, 1.6, 8);
+
+    ctx.font = 'italic 11px "Iowan Old Style","Palatino Linotype",Georgia,serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(200,215,245,.8)';
+    ctx.fillText('name this', x, y + 22);
+
+    nameAffordances.push({ x, y, r: 16, key, world });
+  }
+
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /* ==================== main loop ==================== */
+  let last = performance.now();
+  function frame(ts){
+    const dt = Math.min(3, (ts - last) / 16.667) || 1;
+    last = ts;
+    time += dt * .016;
+
+    stepFX(dt);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+    positionNameOverlay();
+    positionEditOverlay();
+    requestAnimationFrame(frame);
+  }
+
+  /* ==================== boot ==================== */
+  paintMute();
+  refreshInfo();
+  refreshPanel();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

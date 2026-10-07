@@ -6,6 +6,7 @@
 <title>The Room</title>
 <meta name="description" content="A small collection of browser rooms for letting go.">
 <meta name="theme-color" content="#0c1018">
+<link rel="icon" href="data:,">
 <meta property="og:title" content="The Room">
 <meta property="og:description" content="A small collection of browser rooms for letting go.">
 <meta property="og:type" content="website">
@@ -15,10 +16,16 @@
   --ink:#dbe4f0;
   --mute:#9aa7bc;
   --dim:#6b7a90;
-  --line:rgba(160,185,220,.12);
   --tint-warm:180,120,80;
   --tint-cool:80,120,180;
   --tint:var(--tint-cool);
+  /* shared motion + surface tokens */
+  --dur:220ms;
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --card-bg-rest:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.014));
+  --card-bg-lift:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.02));
+  --card-line:rgba(255,255,255,.10);
+  --card-shadow-rest:inset 0 1px 0 rgba(255,255,255,.05),0 10px 40px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
@@ -29,6 +36,7 @@ body{
     var(--bg);
   color:var(--ink);
   font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  font-variant-numeric:tabular-nums;
   -webkit-font-smoothing:antialiased;
   padding:clamp(34px,8vh,104px) 20px 120px;
   overflow-x:hidden;
@@ -44,7 +52,7 @@ header{text-align:center;margin-bottom:clamp(44px,7vh,88px);position:relative}
   margin:0 0 18px;
   color:var(--dim);font-size:11px;letter-spacing:.28em;
   text-transform:uppercase;font-style:italic;
-  opacity:0;animation:rise .9s cubic-bezier(.2,.7,.3,1) .05s forwards;
+  opacity:0;animation:rise .9s var(--ease) .05s forwards;
 }
 h1{
   margin:0;font-weight:300;
@@ -54,18 +62,18 @@ h1{
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent;
   text-shadow:0 0 60px rgba(var(--tint),.14);
-  opacity:0;animation:rise 1s cubic-bezier(.2,.7,.3,1) .18s forwards;
+  opacity:0;animation:rise 1s var(--ease) .18s forwards;
 }
 .sub{
   margin:20px 0 0;color:var(--mute);
   font-style:italic;font-size:clamp(15px,2.4vw,18px);
   letter-spacing:.02em;
-  opacity:0;animation:rise 1s cubic-bezier(.2,.7,.3,1) .32s forwards;
+  opacity:0;animation:rise 1s var(--ease) .32s forwards;
 }
 .rule{
   width:80px;height:1px;margin:30px auto 0;
   background:linear-gradient(90deg,transparent,rgba(var(--tint),.55),transparent);
-  opacity:0;animation:rise 1s cubic-bezier(.2,.7,.3,1) .44s forwards;
+  opacity:0;animation:rise 1s var(--ease) .44s forwards;
 }
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
@@ -73,39 +81,54 @@ h1{
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(268px,1fr));
-  gap:18px;
+  gap:20px;
 }
 .room{
   display:flex;flex-direction:column;
   padding:0;
-  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
-  border:1px solid var(--line);
+  background:var(--card-bg-rest);
+  border:1px solid var(--card-line);
   border-radius:20px;
   text-decoration:none;color:inherit;
   overflow:hidden;
   position:relative;
-  transition:transform .5s cubic-bezier(.2,.7,.3,1),
-             border-color .45s ease,
-             background .45s ease,
-             box-shadow .45s ease;
-  opacity:0;transform:translateY(16px);
-  animation:rise .9s cubic-bezier(.2,.7,.3,1) forwards;
+  box-shadow:var(--card-shadow-rest);
+  transition:translate var(--dur) var(--ease),
+             scale var(--dur) var(--ease),
+             border-color var(--dur) var(--ease),
+             background var(--dur) var(--ease),
+             box-shadow var(--dur) var(--ease);
+  opacity:0;transform:translateY(14px);
+  animation:rise .9s var(--ease) forwards;
 }
 .room::after{
   content:'';position:absolute;left:22px;right:22px;top:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(var(--c),.7),transparent);
-  opacity:0;transition:opacity .5s ease;pointer-events:none;
+  opacity:0;transition:opacity var(--dur) var(--ease);pointer-events:none;
 }
+/* lift uses the independent `translate` property so the entrance
+   animation (which animates `transform`) can never cancel it */
 .room:hover,.room:focus-visible{
-  transform:translateY(-5px);
+  translate:0 -5px;
   border-color:rgba(var(--c),.42);
-  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  background:var(--card-bg-lift);
   box-shadow:
-    0 26px 52px -24px rgba(0,0,0,.8),
-    0 0 0 1px rgba(var(--c),.06),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 18px 44px -14px rgba(0,0,0,.75),
+    0 0 0 1px rgba(var(--c),.10),
     0 0 48px -12px rgba(var(--c),.32);
-  outline:none;
 }
+/* the focus ring is a designed element, not a default */
+.room:focus-visible{
+  outline:2px solid rgb(var(--c));
+  outline-offset:3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 18px 44px -14px rgba(0,0,0,.75),
+    0 0 0 4px rgba(var(--c),.20),
+    0 0 48px -12px rgba(var(--c),.35);
+}
+.room:active{scale:.985}
 .room:hover::after,.room:focus-visible::after{opacity:1}
 
 /* preview block */
@@ -116,19 +139,19 @@ h1{
   background:
     radial-gradient(120% 110% at 50% 0%,rgba(var(--c),.14),rgba(var(--c),.02) 55%,transparent 90%),
     linear-gradient(180deg,rgba(0,0,0,.20),rgba(0,0,0,0));
-  border-bottom:1px solid rgba(var(--c),.14);
+  border-bottom:1px solid rgba(var(--c),.16);
   overflow:hidden;
-  transition:background .45s ease;
+  transition:background var(--dur) var(--ease);
 }
 .preview canvas{display:block;width:100%;height:100%}
-.room:hover .preview{
+.room:hover .preview,.room:focus-visible .preview{
   background:
     radial-gradient(120% 110% at 50% 0%,rgba(var(--c),.24),rgba(var(--c),.04) 55%,transparent 90%),
     linear-gradient(180deg,rgba(0,0,0,.14),rgba(0,0,0,0));
 }
 
 /* card body */
-.card-body{padding:16px 20px 20px;display:flex;flex-direction:column;flex:1}
+.card-body{padding:18px 20px 20px;display:flex;flex-direction:column;flex:1}
 .card-head{
   display:flex;align-items:center;gap:12px;margin-bottom:8px;
 }
@@ -139,37 +162,38 @@ h1{
   background:radial-gradient(circle at 50% 40%,rgba(var(--c),.20),rgba(var(--c),.03) 70%);
   border:1px solid rgba(var(--c),.22);
   color:rgb(var(--c));
-  transition:border-color .45s ease,background .45s ease,box-shadow .45s ease;
+  transition:border-color var(--dur) var(--ease),background var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
 }
 .glyph svg{width:16px;height:16px;display:block}
-.room:hover .glyph{
+.room:hover .glyph,.room:focus-visible .glyph{
   border-color:rgba(var(--c),.55);
   background:radial-gradient(circle at 50% 40%,rgba(var(--c),.32),rgba(var(--c),.06) 70%);
   box-shadow:0 0 20px rgba(var(--c),.28);
 }
 h2{
-  margin:0;font-weight:400;font-size:16.5px;letter-spacing:.05em;color:#e6eef8;
+  margin:0;font-weight:400;font-size:16.5px;line-height:1.3;
+  letter-spacing:.05em;color:#e6eef8;
   display:flex;align-items:center;gap:8px;
 }
 .visited-dot{
-  width:6px;height:6px;border-radius:50%;
+  width:7px;height:7px;border-radius:50%;
   background:rgb(var(--c));
-  box-shadow:0 0 8px rgba(var(--c),.8);
-  opacity:0;transition:opacity .4s ease;
-  flex:none;
+  box-shadow:0 0 0 1px rgba(0,0,0,.35),0 0 9px rgba(var(--c),.65);
+  opacity:0;transition:opacity var(--dur) var(--ease);
+  flex:none;transform:translateY(1px);
 }
-.room.visited .visited-dot{opacity:.9}
+.room.visited .visited-dot{opacity:.95}
 p.desc{margin:0;color:var(--mute);font-size:13.5px;line-height:1.62;flex:1}
 .arrow{
   margin-top:14px;padding-top:12px;
-  border-top:1px solid rgba(255,255,255,.05);
+  border-top:1px solid rgba(255,255,255,.06);
   display:inline-flex;align-items:center;gap:6px;
   color:var(--dim);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-style:italic;
-  transition:color .4s ease,gap .4s ease;
+  transition:color var(--dur) var(--ease),gap var(--dur) var(--ease);
 }
-.arrow svg{width:12px;height:12px;transition:transform .4s ease}
-.room:hover .arrow{color:rgba(var(--c),.95);gap:10px}
-.room:hover .arrow svg{transform:translateX(2px)}
+.arrow svg{width:12px;height:12px;transition:transform var(--dur) var(--ease)}
+.room:hover .arrow,.room:focus-visible .arrow{color:rgba(var(--c),.95);gap:10px}
+.room:hover .arrow svg,.room:focus-visible .arrow svg{transform:translateX(2px)}
 
 footer{
   margin-top:76px;text-align:center;
@@ -180,6 +204,9 @@ footer em{font-style:italic;color:var(--mute)}
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.01s!important;animation-duration:.01s!important}
   .room,header *{opacity:1;transform:none}
+  /* calm: no positional hover / focus / active motion either */
+  .room:hover,.room:focus-visible,.room:active{translate:none!important;scale:none!important}
+  .room:hover .arrow svg,.room:focus-visible .arrow svg{transform:none!important}
 }
 </style>
 </head>
@@ -707,6 +734,8 @@ const PREVIEWS = {
 const VISITED_KEY = 'the-room:visited:v1';
 let visited = {};
 try { visited = JSON.parse(localStorage.getItem(VISITED_KEY) || '{}'); } catch(e){}
+/* the stored value may be null or a non-object — never trust it */
+if (!visited || typeof visited !== 'object') visited = {};
 const markVisited = id => {
   visited[id] = Date.now();
   try { localStorage.setItem(VISITED_KEY, JSON.stringify(visited)); } catch(e){}
@@ -732,9 +761,12 @@ document.getElementById('grid').innerHTML = ROOMS.map((r, i) => `
     </div>
   </a>`).join('');
 
-// mark visited on click
+// mark visited on left click and on middle click (auxclick, button 1)
 document.querySelectorAll('.room').forEach(el => {
   el.addEventListener('click', () => markVisited(el.dataset.room));
+  el.addEventListener('auxclick', e => {
+    if (e.button === 1) markVisited(el.dataset.room);
+  });
 });
 
 /* ============================================================
@@ -759,9 +791,36 @@ document.querySelectorAll('.room').forEach(el => {
 })();
 
 /* ============================================================
+   MOTION PREFERENCE
+   One shared flag gates every JS animation. It can flip at
+   runtime, so each subsystem re-renders on `change`.
+   ============================================================ */
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+let calm = motionQuery.matches;
+/* fixed timestamp (seconds) used to paint one still preview frame */
+const CALM_T = 1.7;
+/* assigned by the ambient module below so the change listener can re-sync it */
+let ambientSync = null;
+
+/* ============================================================
    LIVE PREVIEW ENGINE
    ============================================================ */
 const previewCanvases = [];
+
+function paintPreview(pc, t){
+  if (pc.w < 1 || pc.h < 1) return; // never draw into an unmeasured buffer
+  pc.ctx.globalCompositeOperation = 'source-over';
+  pc.ctx.globalAlpha = 1;
+  pc.ctx.clearRect(0, 0, pc.w, pc.h);
+  pc.fn(pc.ctx, pc.w, pc.h, t);
+}
+
+/* reduced motion: each visible card gets exactly one still frame */
+function renderStaticPreviews(){
+  for (const pc of previewCanvases){
+    if (pc.visible) paintPreview(pc, CALM_T);
+  }
+}
 
 function setupPreviews(){
   document.querySelectorAll('[data-preview]').forEach(el => {
@@ -769,6 +828,7 @@ function setupPreviews(){
     const fn = PREVIEWS[id];
     if (!fn) return;
     const canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true'); // decorative — keep out of the a11y tree
     canvas.style.display = 'block';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
@@ -785,6 +845,8 @@ function setupPreviews(){
       canvas.width = Math.round(pc.w * pc.dpr);
       canvas.height = Math.round(pc.h * pc.dpr);
       ctx.setTransform(pc.dpr, 0, 0, pc.dpr, 0, 0);
+      // resizing clears the buffer, so re-paint the still frame when calm
+      if (calm && pc.visible) paintPreview(pc, CALM_T);
     }
     pc.resize = resize;
     resize();
@@ -796,7 +858,10 @@ function setupPreviews(){
     const io = new IntersectionObserver(entries => {
       for (const e of entries){
         const pc = previewCanvases.find(p => p.el === e.target);
-        if (pc) pc.visible = e.isIntersecting;
+        if (!pc) continue;
+        pc.visible = e.isIntersecting;
+        // reduced motion: paint the still frame as each card scrolls in
+        if (calm && pc.visible) paintPreview(pc, CALM_T);
       }
     }, { rootMargin: '120px' });
     previewCanvases.forEach(pc => io.observe(pc.el));
@@ -807,17 +872,20 @@ function setupPreviews(){
   });
 }
 
-/* single RAF loop drives all previews */
-let lastT = 0;
+/* single RAF loop drives all previews; parked entirely while `calm` is set */
+let previewFrameQueued = false;
+function queuePreviewFrame(){
+  if (previewFrameQueued || calm) return;
+  previewFrameQueued = true;
+  requestAnimationFrame(previewLoop);
+}
 function previewLoop(ts){
+  if (calm){ previewFrameQueued = false; return; } // still frame is already painted
   const t = ts / 1000;
   if (!document.hidden){
     for (const pc of previewCanvases){
       if (!pc.visible) continue;
-      pc.ctx.globalCompositeOperation = 'source-over';
-      pc.ctx.globalAlpha = 1;
-      pc.ctx.clearRect(0, 0, pc.w, pc.h);
-      pc.fn(pc.ctx, pc.w, pc.h, t);
+      paintPreview(pc, t);
     }
   }
   requestAnimationFrame(previewLoop);
@@ -830,16 +898,13 @@ function previewLoop(ts){
   const cv = document.getElementById('ambient');
   const ctx = cv.getContext('2d');
   let W = 0, H = 0, dpr = 1;
-  function resize(){
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
-    cv.width = W * dpr; cv.height = H * dpr;
-    cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  addEventListener('resize', resize); resize();
 
-  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // --tint is set once at load by tintByHour(), so sample it once (no polling)
+  const tintRGB = (() => {
+    const s = getComputedStyle(document.documentElement).getPropertyValue('--tint').trim();
+    return s || '80,120,180';
+  })();
+
   const DUST = Array.from({ length: calm ? 26 : 44 }, () => ({
     u: Math.random(), v: Math.random(),
     s: .4 + Math.random() * .8,
@@ -847,43 +912,67 @@ function previewLoop(ts){
     r: .5 + Math.random() * 1.2
   }));
 
-  // read the tint from the CSS var once per frame
-  function getTintRGB(){
-    const s = getComputedStyle(document.documentElement).getPropertyValue('--tint').trim();
-    return s || '80,120,180';
-  }
-  let tintRGB = getTintRGB();
-  setInterval(() => { tintRGB = getTintRGB(); }, 4000);
-
-  function frame(ts){
+  function draw(ts){
     ctx.clearRect(0, 0, W, H);
-    // slow center glow
+    // slow center glow — fixed level when calm
     const glowR = Math.max(W, H) * .6;
-    const pulse = .5 + .5 * Math.sin(ts * .00012);
+    const pulse = calm ? .5 : .5 + .5 * Math.sin(ts * .00012);
     const g = ctx.createRadialGradient(W * .5, H * .35, 0, W * .5, H * .35, glowR);
     g.addColorStop(0, `rgba(${tintRGB},${.06 + .03 * pulse})`);
     g.addColorStop(1, `rgba(${tintRGB},0)`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
-    // dust
+    // dust — fixed positions and a steady alpha when calm
     ctx.fillStyle = 'rgb(200,215,240)';
     for (const d of DUST){
       const x = calm ? d.u * W : ((d.u * W + Math.sin(ts * .00020 * d.s + d.ph) * 44) % W + W) % W;
       const y = calm ? d.v * H : d.v * H + Math.cos(ts * .00026 * d.s + d.ph) * 28;
-      ctx.globalAlpha = .10 + .14 * (.5 + .5 * Math.sin(ts * .0009 * d.s + d.ph));
+      ctx.globalAlpha = calm ? .17 : .10 + .14 * (.5 + .5 * Math.sin(ts * .0009 * d.s + d.ph));
       ctx.fillRect(x, y, d.r, d.r);
     }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+
+  let frameQueued = false;
+  function step(ts){
+    if (calm){ frameQueued = false; return; } // parked; a still frame is already painted
+    draw(ts);
+    requestAnimationFrame(step);
+  }
+  function kick(){
+    if (frameQueued || calm) return;
+    frameQueued = true;
+    requestAnimationFrame(step);
+  }
+
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (calm) draw(0); // buffer was just cleared
+  }
+  addEventListener('resize', resize);
+  resize();
+  if (!calm) kick();
+
+  // re-synced by the shared prefers-reduced-motion change listener
+  ambientSync = () => { if (calm) draw(0); else kick(); };
 })();
 
 /* ============================================================
    BOOT
    ============================================================ */
 setupPreviews();
-requestAnimationFrame(previewLoop);
+if (calm) renderStaticPreviews(); else queuePreviewFrame();
+
+/* one shared listener re-renders everything when the preference flips */
+motionQuery.addEventListener('change', e => {
+  calm = e.matches;
+  if (calm) renderStaticPreviews(); else queuePreviewFrame();
+  if (ambientSync) ambientSync();
+});
 </script>
 </body>
 </html>

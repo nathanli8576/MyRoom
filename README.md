@@ -14,10 +14,13 @@ Each room keeps its state under its own key so nothing collides:
 | `thought-decay:forest:v2` | Thought Decay | Trees, seed keys, release count |
 | `thought-decay:muted` | Thought Decay | Mute preference |
 | `unsent-letters:v2` | The Unsent Letter | Letters in orbit |
+| `letter:muted` | The Unsent Letter | Mute preference |
+| `burn:muted` | Burn It | Mute preference |
 | `worry-jar:v2` | The Worry Jar | Sealed worries and their outcomes |
 | `constellation:v3` | A Constellation | Stars, connections, cluster names |
 | `constellation:prefs:v1` | A Constellation | UI preferences |
 | `constellation:muted` | A Constellation | Mute preference |
+| `scream:muted` | Scream Into the Void | Mute preference |
 | `bubblewrap:total` | Bubble Wrap | Lifetime pop count |
 | `bubblewrap:muted` | Bubble Wrap | Mute preference |
 | `glass:muted` | A Pane of Glass | Mute preference |
@@ -38,7 +41,7 @@ A few rules that shaped every room, in case you want to add one:
 1. **One verb per room.** Pick up an object, do one thing with it, put it down. No dashboards, no menus, no progress bars that reset daily.
 2. **A physical metaphor that does the therapeutic work.** The point of Thought Decay isn't the tree — it's that you watch your own words dissolve and become something else.
 3. **Nothing leaves the browser.** No accounts, no servers, no analytics, no images loaded from anywhere. Every visual is drawn on a canvas or built from CSS.
-4. **Reduced-motion is respected.** Every room checks `prefers-reduced-motion` and disables large-scale motion while keeping the interaction intact. The 4-7-8 breathing guide in Thought Decay, for example, still advances its text cue but stops pulsing the circle.
+4. **Reduced-motion is respected.** Every room checks `prefers-reduced-motion` and disables large-scale motion while keeping the interaction intact — and while keeping every feature reachable: The Pillow still awards feathers and XP, just with calmer particles. The 4-7-8 breathing guide in Thought Decay, for example, still advances its text cue but stops pulsing the circle. The hub follows the same rule: its live card previews draw a single static frame instead of animating.
 5. **Audio is gesture-gated and optional.** No sound plays until you interact. Every room that makes noise has a mute button that remembers your choice. The AudioContext is created lazily on the first click or keypress, never on page load.
 6. **A back arrow and a mute button live in the same two corners** across every room, so the interface is predictable.
 
@@ -46,11 +49,12 @@ A few rules that shaped every room, in case you want to add one:
 
 ## Accessibility notes
 
-- All interactive controls are real `<button>`, `<input>`, or `<a>` elements — keyboard reachable and screen-reader friendly.
-- The seed picker in Thought Decay is a proper radiogroup with roving tabindex and arrow-key navigation.
-- Live regions (`aria-live="polite"`) announce status changes in Thought Decay, The Worry Jar, A Constellation, and Will This Matter?.
-- Every icon-only button has an `aria-label`.
-- Focus outlines are visible on every focusable element via `:focus-visible`.
+- All interactive controls are real `<button>`, `<input>`, or `<a>` elements — keyboard reachable and screen-reader friendly. The canvas rooms expose keyboard paths too: focus the pane and press Enter/Space in A Pane of Glass, use the Place button / focused canvas in A Constellation, hold the button in Scream Into the Void, pop bubbles with Enter/Space, and open letters, ripe worries and due check-ins from real buttons.
+- The seed picker in Thought Decay, the duration picker in The Worry Jar, and the shape picker in A Pane of Glass are proper radiogroups with roving tabindex and arrow-key navigation.
+- Dialogs (the letter reader, the worry resolver, the check-in modal, the Constellation panel) use `role="dialog"` + `aria-modal`, move focus in, restore it on close, close on Escape, and mark the background `inert` while open.
+- Live regions (`aria-live="polite"`) announce status changes in Thought Decay, The Worry Jar, A Constellation, and Will This Matter?, plus state transitions in Burn It, Bubble Wrap, A Pane of Glass, Scream Into the Void, and milestones in The Pillow.
+- Every icon-only button has an `aria-label`. Mute toggles keep a constant accessible name ("Mute sound"), expose state through `aria-pressed`, and carry a dynamic tooltip.
+- Focus outlines are visible on every focusable element via `:focus-visible` — including canvases you can act on with the keyboard.
 
 If you extend a room, keep these in place.
 
@@ -63,7 +67,7 @@ Tested in current Chrome, Safari, Firefox, and Edge on desktop and mobile.
 A few rooms use APIs that require reasonable support:
 
 - `visualViewport` — Thought Decay's mobile keyboard handling. Falls back gracefully if unavailable.
-- `inert` — Thought Decay and The Unsent Letter hide decaying panels from the tab order. Older browsers simply won't skip them, but nothing breaks.
+- `inert` — several rooms hide closed panels, inactive phases and modal backdrops from the tab order (Thought Decay, The Unsent Letter, The Worry Jar, Will This Matter?, A Constellation). Older browsers simply won't skip them, but nothing breaks.
 - `IntersectionObserver` — The Room's preview gating. If missing, all previews animate at once (still fine).
 - Web Audio API — every room that makes sound. If unavailable, silent but functional.
 

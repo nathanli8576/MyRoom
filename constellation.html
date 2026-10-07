@@ -19,26 +19,31 @@ body{background:#06060f;color:var(--ink);
 #c.placing{cursor:crosshair}
 #c.star{cursor:pointer}
 .back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  width:40px;height:40px;display:grid;place-items:center;border-radius:999px;
   color:var(--mute);text-decoration:none;border:1px solid var(--line);
   background:rgba(10,12,24,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
+  box-shadow:0 8px 24px -14px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:color .18s,border-color .18s,background .18s,transform .15s}
 .back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.back:active{transform:scale(.94)}
 .topright{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
   display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .pill{font:inherit;cursor:pointer;
   display:inline-flex;align-items:center;gap:8px;
-  padding:8px 14px;height:36px;border-radius:999px;
+  padding:8px 14px;height:40px;border-radius:999px;
   color:var(--mute);font-size:12px;letter-spacing:.08em;
   background:rgba(10,12,24,.55);backdrop-filter:blur(8px);
   border:1px solid var(--line);
-  transition:color .3s,border-color .3s,background .3s,box-shadow .3s}
+  box-shadow:0 8px 24px -14px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:color .18s,border-color .18s,background .18s,box-shadow .18s,transform .15s}
 .pill:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.pill:active{transform:scale(.94)}
 .pill svg{width:14px;height:14px;flex:none}
-.pill.icon-only{padding:0;width:36px;justify-content:center}
+.pill.icon-only{padding:0;width:40px;justify-content:center}
 .pill .badge{
   display:inline-block;padding:1px 6px;margin-left:2px;
   font-size:10px;letter-spacing:.04em;font-style:italic;
+  font-variant-numeric:tabular-nums;
   color:#dfe6ff;background:rgba(var(--accent),.18);border-radius:999px}
 .pill .x{display:none}
 .pill.muted .w{display:none}
@@ -76,29 +81,33 @@ body{background:#06060f;color:var(--ink);
   width:min(480px,calc(100% - 36px));
   display:flex;gap:8px;align-items:center;
   background:rgba(10,14,26,.82);backdrop-filter:blur(14px);
-  border:1px solid var(--line);border-radius:999px;
+  border:1px solid rgba(255,255,255,.1);border-radius:999px;
   padding:8px 8px 8px 20px;
-  box-shadow:0 18px 50px -20px rgba(0,0,0,.9);
-  transition:opacity .4s ease,border-color .4s ease}
-.compose.armed{border-color:rgba(var(--accent),.55);box-shadow:0 0 40px -6px rgba(var(--accent),.28)}
+  box-shadow:0 18px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:opacity .4s ease,border-color .4s ease,box-shadow .4s ease}
+.compose.armed{border-color:rgba(var(--accent),.55);box-shadow:0 0 40px -6px rgba(var(--accent),.28),inset 0 1px 0 rgba(255,255,255,.06)}
 .compose input{flex:1;background:none;border:0;outline:none;color:var(--ink);
   font:300 15px/1.4 inherit;padding:8px 0;min-width:0}
 .compose input::placeholder{color:var(--dim);font-style:italic}
+.compose input:focus-visible{outline:2px solid rgba(var(--accent),.85);outline-offset:3px;border-radius:8px}
 .compose button{font:inherit;cursor:pointer;
-  padding:9px 20px;border-radius:999px;
+  padding:9px 20px;min-height:38px;border-radius:999px;
   font-size:13px;letter-spacing:.08em;color:#e8eeff;
   border:1px solid rgba(var(--accent),.4);
   background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.05));
-  transition:box-shadow .4s,border-color .4s,transform .2s,opacity .4s;
+  transition:box-shadow .2s,border-color .2s,background .2s,color .2s,transform .15s,opacity .3s;
   white-space:nowrap}
 .compose button:hover:not(:disabled){box-shadow:0 0 22px rgba(var(--accent),.3);border-color:rgba(var(--accent),.75)}
-.compose button:active:not(:disabled){transform:scale(.97)}
+.compose button:active:not(:disabled){transform:scale(.94)}
 .compose button:disabled{opacity:.35;cursor:default}
+.compose button.ghost{background:none;color:var(--mute);border-color:var(--line)}
+.compose button.ghost:hover:not(:disabled){color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.1);box-shadow:none}
 .overlay{position:fixed;z-index:6;display:none;
-  padding:8px;border-radius:14px;
-  background:rgba(12,16,30,.96);backdrop-filter:blur(12px);
-  border:1px solid rgba(var(--accent),.55);
-  box-shadow:0 12px 40px -10px rgba(0,0,0,.9),0 0 32px -12px rgba(var(--accent),.4);
+  padding:8px 10px;border-radius:16px;
+  background:rgba(12,16,30,.9);backdrop-filter:blur(16px) saturate(1.2);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 24px 60px -22px rgba(0,0,0,.95),0 0 30px -14px rgba(var(--accent),.45),
+    inset 0 1px 0 rgba(255,255,255,.06);
   gap:8px;align-items:center}
 .overlay.show{display:flex}
 .overlay.edit{z-index:8}
@@ -108,35 +117,40 @@ body{background:#06060f;color:var(--ink);
 .overlay input{background:none;border:0;outline:none;color:var(--ink);
   font:300 14px/1.4 inherit;padding:6px 10px;min-width:180px}
 .overlay input::placeholder{color:var(--dim);font-style:italic}
-.overlay button{font:inherit;cursor:pointer;padding:6px 14px;border-radius:999px;
+.overlay input:focus-visible{outline:2px solid rgba(var(--accent),.85);outline-offset:3px;border-radius:8px}
+.overlay button{font:inherit;cursor:pointer;padding:6px 14px;min-height:34px;border-radius:999px;
   font-size:12px;letter-spacing:.06em;color:#e8eeff;
   border:1px solid rgba(var(--accent),.4);
   background:rgba(var(--accent),.12);
-  transition:background .3s,border-color .3s}
+  transition:background .18s,border-color .18s,color .18s,transform .15s}
 .overlay button:hover{background:rgba(var(--accent),.22);border-color:rgba(var(--accent),.7)}
+.overlay button:active{transform:scale(.94)}
 .overlay button.ghost{background:none;color:var(--mute);border-color:var(--line)}
+.overlay button.ghost:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.08)}
 .ctx{position:fixed;z-index:9;display:none;flex-direction:column;
-  padding:4px;min-width:150px;
-  background:rgba(12,16,30,.97);backdrop-filter:blur(12px);
-  border:1px solid rgba(var(--accent),.45);border-radius:12px;
-  box-shadow:0 12px 40px -10px rgba(0,0,0,.9);
+  padding:5px;min-width:150px;
+  background:rgba(12,16,30,.94);backdrop-filter:blur(16px) saturate(1.2);
+  border:1px solid rgba(255,255,255,.12);border-radius:14px;
+  box-shadow:0 24px 60px -22px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.06);
   animation:ctxIn .14s ease}
 .ctx.show{display:flex}
 @keyframes ctxIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.ctx button{font:inherit;cursor:pointer;padding:8px 14px;
-  background:none;border:0;border-radius:8px;
+.ctx button{font:inherit;cursor:pointer;padding:9px 14px;
+  background:none;border:0;border-radius:9px;
   color:var(--ink);font-size:13px;text-align:left;
   display:flex;align-items:center;gap:10px;
-  transition:background .2s,color .2s}
+  transition:background .18s,color .18s,transform .15s}
 .ctx button:hover{background:rgba(var(--accent),.12)}
+.ctx button:active{transform:scale(.96)}
 .ctx button.danger:hover{background:rgba(255,120,120,.16);color:#ffc8c8}
 .ctx .ctx-icon{width:14px;height:14px;flex:none;opacity:.7}
 .ctx .sep{height:1px;margin:4px 6px;background:var(--line)}
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);
   transform:translateX(-50%) translateY(6px);
-  padding:8px 18px;border-radius:999px;
-  background:rgba(10,14,26,.92);backdrop-filter:blur(8px);
-  border:1px solid rgba(var(--accent),.35);
+  padding:9px 18px;border-radius:999px;
+  background:rgba(10,14,26,.92);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 16px 40px -18px rgba(0,0,0,.95),0 0 24px -16px rgba(var(--accent),.5);
   color:#dce4fa;font-size:12.5px;letter-spacing:.04em;
   opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;z-index:10;
   font-style:italic;max-width:calc(100% - 32px);text-align:center}
@@ -144,78 +158,92 @@ body{background:#06060f;color:var(--ink);
 .panel{position:fixed;top:0;right:0;z-index:7;
   height:100vh;height:100dvh;
   width:min(380px,92vw);
-  background:rgba(8,10,20,.94);backdrop-filter:blur(16px);
-  border-left:1px solid var(--line);
-  box-shadow:-30px 0 80px -30px rgba(0,0,0,.9);
+  background:rgba(8,10,20,.92);backdrop-filter:blur(18px) saturate(1.15);
+  border-left:1px solid rgba(255,255,255,.1);
+  border-radius:20px 0 0 20px;
+  box-shadow:-30px 0 80px -30px rgba(0,0,0,.95),inset 1px 0 0 rgba(255,255,255,.04);
   transform:translateX(100%);
-  transition:transform .42s cubic-bezier(.2,.7,.3,1);
+  visibility:hidden;
+  transition:transform .24s cubic-bezier(.2,.7,.3,1),visibility 0s linear .24s;
   display:flex;flex-direction:column;
   padding-top:calc(env(safe-area-inset-top,0px) + 8px);
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
-.panel.open{transform:translateX(0)}
+.panel.open{transform:translateX(0);visibility:visible;
+  transition:transform .24s cubic-bezier(.2,.7,.3,1),visibility 0s}
 .panel-head{display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px 12px;
+  gap:10px;padding:14px 16px 12px;
   border-bottom:1px solid var(--line)}
 .panel-head h2{margin:0;font-weight:300;font-size:15px;letter-spacing:.12em;
   color:var(--ink);text-transform:uppercase}
 .panel-head .head-actions{display:flex;align-items:center;gap:8px}
 .panel-head .clear{font:inherit;cursor:pointer;
-  padding:5px 12px;border-radius:999px;
-  font-size:11px;letter-spacing:.08em;
+  min-height:36px;padding:6px 14px;border-radius:999px;
+  font-size:11px;letter-spacing:.08em;font-variant-numeric:tabular-nums;
   color:var(--dim);background:none;
   border:1px solid var(--line);
-  transition:color .3s,border-color .3s,background .3s,box-shadow .3s;
+  transition:color .18s,border-color .18s,background .18s,box-shadow .18s,transform .15s;
   white-space:nowrap}
 .panel-head .clear:hover{color:#ffb4b4;border-color:rgba(255,140,140,.4)}
+.panel-head .clear:active{transform:scale(.94)}
 .panel-head .clear.armed{
   color:#ffc8c8;
   border-color:rgba(255,120,120,.75);
   background:rgba(255,120,120,.16);
   box-shadow:0 0 18px rgba(255,120,120,.24)}
-.panel-head .close{width:30px;height:30px;border-radius:999px;
+.panel-head .close{width:38px;height:38px;border-radius:999px;
   display:grid;place-items:center;background:none;border:1px solid var(--line);
   color:var(--mute);cursor:pointer;font-size:17px;line-height:1;padding:0;
-  transition:color .3s,border-color .3s}
-.panel-head .close:hover{color:var(--ink);border-color:rgba(var(--accent),.5)}
+  transition:color .18s,border-color .18s,background .18s,transform .15s}
+.panel-head .close:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.08)}
+.panel-head .close:active{transform:scale(.94)}
 .panel-body{flex:1;overflow-y:auto;padding:10px 10px 14px}
 .panel-empty{color:var(--dim);font-size:13px;font-style:italic;
   padding:40px 20px;text-align:center;line-height:1.7}
 .row{display:flex;gap:10px;align-items:flex-start;
-  padding:11px 12px;margin:4px 0;
-  border-radius:12px;cursor:pointer;
+  padding:12px;margin:5px 0;
+  border-radius:14px;cursor:pointer;
   border:1px solid transparent;
-  transition:background .25s,border-color .25s}
+  transition:background .2s,border-color .2s}
 .row:hover{background:rgba(var(--accent),.06);border-color:rgba(var(--accent),.18)}
+.row:focus-within{background:rgba(var(--accent),.07);border-color:rgba(var(--accent),.32)}
 .row.focused{background:rgba(255,225,160,.07);border-color:rgba(255,225,160,.28)}
-.star-dot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:6px;
+.star-dot{flex:none;width:10px;height:10px;border-radius:50%;margin-top:7px;
   background:var(--c,#9aa7c7);
   box-shadow:0 0 10px var(--c,#9aa7c7),0 0 3px var(--c,#9aa7c7)}
-.row-main{flex:1;min-width:0}
-.row-text{font-size:14px;line-height:1.5;color:var(--ink);
-  word-break:break-word;margin:0 0 4px}
-.row-meta{font-size:10.5px;letter-spacing:.06em;color:var(--dim);
-  font-style:italic;text-transform:uppercase}
+.row-main{flex:1;min-width:0;
+  display:block;background:none;border:0;padding:0;margin:0;
+  font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:8px}
+.row-text{display:block;font-size:14px;line-height:1.5;color:var(--ink);
+  word-break:break-word;margin:0 0 5px}
+.row-meta{display:block;font-size:10.5px;letter-spacing:.06em;color:var(--dim);
+  font-style:italic;text-transform:uppercase;font-variant-numeric:tabular-nums}
 .row-cluster{color:#e5d8a8;font-style:italic;text-transform:none;letter-spacing:.02em;font-size:11px;margin-left:6px}
-.row-actions{display:flex;gap:2px;flex:none;
-  opacity:0;transition:opacity .25s}
-.row:hover .row-actions{opacity:1}
+.row-actions{display:flex;gap:4px;flex:none;align-self:center;
+  opacity:0;transition:opacity .2s}
+.row:hover .row-actions,
+.row:focus-within .row-actions{opacity:1}
 .row-actions button{
-  width:22px;height:22px;border-radius:999px;
+  width:32px;height:32px;border-radius:999px;
   display:grid;place-items:center;
   background:none;border:1px solid transparent;
-  color:var(--dim);cursor:pointer;font-size:12px;line-height:1;padding:0;
-  transition:color .2s,border-color .2s,background .2s}
+  color:var(--dim);cursor:pointer;font-size:14px;line-height:1;padding:0;
+  transition:color .18s,border-color .18s,background .18s,transform .15s}
 .row-actions button:hover{color:var(--ink);border-color:rgba(var(--accent),.4);background:rgba(var(--accent),.08)}
+.row-actions button:active{transform:scale(.94)}
 .row-actions button.del:hover{color:#ffb4b4;border-color:rgba(255,140,140,.5)}
 .panel-backdrop{position:fixed;inset:0;z-index:6;
-  background:rgba(2,3,8,.35);
-  opacity:0;pointer-events:none;transition:opacity .4s}
+  background:rgba(2,3,8,.4);
+  opacity:0;pointer-events:none;transition:opacity .24s}
 .panel-backdrop.show{opacity:1;pointer-events:auto}
+/* one consistent focus ring across the room */
+:focus-visible{outline:2px solid rgba(var(--accent),.85);outline-offset:2px}
+#c:focus-visible{outline:2px solid rgba(var(--accent),.6);outline-offset:-4px}
+.info{font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;animation-duration:.01s!important}}
 </style>
 </head>
 <body>
-<canvas id="c" aria-hidden="true"></canvas>
+<canvas id="c" tabindex="0" aria-label="Star sky. Press Enter or Space to place a star at the center of the view, or to select the star at the center."></canvas>
 <a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
 
 <div class="topright">
@@ -246,18 +274,19 @@ body{background:#06060f;color:var(--ink);
 <div class="compose" id="compose">
   <input id="thought" maxlength="140" placeholder="A thought to release into the sky…" autocomplete="off" aria-label="A thought to release">
   <button id="go" disabled>Release</button>
+  <button id="placeBtn" class="ghost" disabled aria-label="Place the star at the center of the view" title="Place at the center of the view">Place</button>
 </div>
 
 <div class="overlay" id="overlay">
   <span class="label">Name</span>
-  <input id="nameInput" maxlength="40" placeholder="Name this constellation…" autocomplete="off">
+  <input id="nameInput" maxlength="40" placeholder="Name this constellation…" autocomplete="off" aria-label="Constellation name">
   <button id="nameSave">Save</button>
   <button class="ghost" id="nameCancel">Cancel</button>
 </div>
 
 <div class="overlay edit" id="editOverlay">
   <span class="label">Edit</span>
-  <input id="editInput" maxlength="140" placeholder="Edit this thought…" autocomplete="off">
+  <input id="editInput" maxlength="140" placeholder="Edit this thought…" autocomplete="off" aria-label="Edit this thought">
   <button id="editSave">Save</button>
   <button class="ghost" id="editCancel">Cancel</button>
 </div>
@@ -281,7 +310,7 @@ body{background:#06060f;color:var(--ink);
 <p class="toast" id="toast" role="status" aria-live="polite"></p>
 
 <div class="panel-backdrop" id="panelBackdrop"></div>
-<aside class="panel" id="panel" role="dialog" aria-label="All thoughts" aria-hidden="true">
+<aside class="panel" id="panel" role="dialog" aria-modal="true" aria-label="All thoughts" aria-hidden="true" inert>
   <div class="panel-head">
     <h2>All thoughts</h2>
     <div class="head-actions">
@@ -296,7 +325,7 @@ body{background:#06060f;color:var(--ink);
 (() => {
   const $ = s => document.querySelector(s);
   const canvas = $('#c'), ctx = canvas.getContext('2d');
-  const info = $('#info'), compose = $('#compose'), thoughtEl = $('#thought'), goBtn = $('#go');
+  const info = $('#info'), compose = $('#compose'), thoughtEl = $('#thought'), goBtn = $('#go'), placeBtn = $('#placeBtn');
   const overlay = $('#overlay'), nameInput = $('#nameInput'), nameSave = $('#nameSave'), nameCancel = $('#nameCancel');
   const editOverlay = $('#editOverlay'), editInput = $('#editInput'), editSave = $('#editSave'), editCancel = $('#editCancel');
   const ctxMenu = $('#ctxMenu');
@@ -458,7 +487,7 @@ body{background:#06060f;color:var(--ink);
   const paintMute = () => {
     muteBtn.classList.toggle('muted', muted);
     muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
   };
   muteBtn.addEventListener('click', () => {
     muted = !muted;
@@ -507,6 +536,20 @@ body{background:#06060f;color:var(--ink);
   let nameAffordances = [];
   let labelHits = [];
 
+  /* connected components are cached until stars/connections change */
+  let compsCache = [];
+  let compsDirty = true;
+
+  /* id -> star index, rebuilt whenever the stars array changes */
+  let starById = new Map();
+  function rebuildStarIndex(){
+    starById = new Map();
+    for (const s of stars) starById.set(s.id, s);
+  }
+  function markGraphDirty(){ compsDirty = true; }
+
+  const ID_RE = /^[A-Za-z0-9_-]+$/;
+
   /* ==================== persistence ==================== */
   const KEY = 'constellation:v3';
   const PREFS = 'constellation:prefs:v1';
@@ -515,7 +558,7 @@ body{background:#06060f;color:var(--ink);
     if (raw && Array.isArray(raw.stars)){
       stars = raw.stars.filter(s => s && typeof s.text === 'string' && Number.isFinite(s.x) && Number.isFinite(s.y))
         .map(s => ({
-          id: s.id || (Date.now() + '-' + Math.random().toString(36).slice(2,7)),
+          id: (typeof s.id === 'string' && ID_RE.test(s.id)) ? s.id : (Date.now() + '-' + Math.random().toString(36).slice(2,7)),
           x: s.x, y: s.y,
           text: s.text, at: s.at || Date.now(),
           hue: Number.isFinite(s.hue) ? s.hue : (Math.random() < .5 ? 210 : 260),
@@ -526,12 +569,19 @@ body{background:#06060f;color:var(--ink);
         .filter(c => c && typeof c.a === 'string' && typeof c.b === 'string')
         .map(c => ({ a: c.a, b: c.b, t: 1 })) : [];
       clusters = raw.clusters && typeof raw.clusters === 'object' ? raw.clusters : {};
+      const seenIds = new Set();
+      for (const s of stars){
+        while (seenIds.has(s.id)) s.id = Date.now() + '-' + Math.random().toString(36).slice(2,7);
+        seenIds.add(s.id);
+      }
     }
     const prefs = JSON.parse(localStorage.getItem(PREFS) || 'null');
     if (prefs && typeof prefs === 'object'){
       showAllText = !!prefs.showAllText;
     }
   } catch(e){ /* ignore */ }
+  rebuildStarIndex();
+  markGraphDirty();
   const save = () => {
     try {
       localStorage.setItem(KEY, JSON.stringify({
@@ -627,6 +677,8 @@ body{background:#06060f;color:var(--ink);
       brightness: .8
     };
     stars.push(s);
+    starById.set(s.id, s);
+    markGraphDirty();
     ripples.push({ x: wx, y: wy, r: 4, max: 90, life: 1 });
     for (let i = 0; i < 14; i++){
       const a = Math.random() * 6.28;
@@ -639,7 +691,7 @@ body{background:#06060f;color:var(--ink);
   }
 
   function editStarText(id, newText){
-    const s = stars.find(x => x.id === id);
+    const s = starById.get(id);
     if (!s) return;
     s.text = newText;
     save(); refreshInfo(); refreshPanel();
@@ -650,8 +702,10 @@ body{background:#06060f;color:var(--ink);
     stars = stars.filter(s => s.id !== id);
     if (stars.length === before) return;
     connections = connections.filter(c => c.a !== id && c.b !== id);
+    rebuildStarIndex();
+    markGraphDirty();
     for (const key of Object.keys(clusters)){
-      if (!stars.find(s => s.id === key)) delete clusters[key];
+      if (!starById.has(key)) delete clusters[key];
     }
     if (selectedStar === id) selectedStar = null;
     if (hoverStar === id) hoverStar = null;
@@ -667,6 +721,8 @@ body{background:#06060f;color:var(--ink);
     clusters = {};
     selectedStar = null;
     hoverStar = null;
+    rebuildStarIndex();
+    markGraphDirty();
     closeEditor();
     closeNamer();
     save(); refreshInfo(); refreshPanel();
@@ -678,6 +734,7 @@ body{background:#06060f;color:var(--ink);
     const exists = connections.find(c => (c.a === aId && c.b === bId) || (c.a === bId && c.b === aId));
     if (exists) return;
     connections.push({ a: aId, b: bId, t: 0 });
+    markGraphDirty();
     sfxLink();
     save(); refreshInfo(); refreshPanel();
   }
@@ -709,10 +766,19 @@ body{background:#06060f;color:var(--ink);
     return comps;
   }
 
+  // recomputed only when stars/connections change, reused every frame otherwise
+  function getComponents(){
+    if (compsDirty){
+      compsCache = components();
+      compsDirty = false;
+    }
+    return compsCache;
+  }
+
   function clusterKey(members){
     let oldest = null, oldestAt = Infinity;
     for (const id of members){
-      const s = stars.find(x => x.id === id);
+      const s = starById.get(id);
       if (!s) continue;
       if (s.at < oldestAt){ oldestAt = s.at; oldest = id; }
     }
@@ -722,20 +788,20 @@ body{background:#06060f;color:var(--ink);
   function centroid(members){
     let sx = 0, sy = 0, n = 0;
     for (const id of members){
-      const s = stars.find(x => x.id === id);
+      const s = starById.get(id);
       if (!s) continue;
       sx += s.x; sy += s.y; n++;
     }
     return n ? { x: sx/n, y: sy/n } : null;
   }
 
-  function clusterForStar(starId){
-    for (const members of components()){
-      if (members.includes(starId) && members.length >= 3){
-        return { key: clusterKey(members), members };
-      }
+  // star id -> the members of its component (built once per panel render)
+  function componentIndex(){
+    const idx = new Map();
+    for (const members of getComponents()){
+      for (const id of members) idx.set(id, members);
     }
-    return null;
+    return idx;
   }
 
   /* ==================== info / toast ==================== */
@@ -762,14 +828,30 @@ body{background:#06060f;color:var(--ink);
   }
 
   /* ==================== naming ==================== */
+  let namerReturnFocus = null;
+  let editorReturnFocus = null;
+
+  function restoreFocus(el, fallback){
+    let target = (el && el.isConnected && typeof el.focus === 'function') ? el : null;
+    // never hand focus back into a closed (inert) panel
+    if (target && target.closest && target.closest('[inert]')) target = null;
+    if (!target) target = fallback;
+    if (!target || typeof target.focus !== 'function') target = canvas;
+    try { target.focus({ preventScroll: true }); } catch(_){ }
+  }
+
   function openNamerFor(key, world){
     closeEditor(); hideCtxMenu();
+    namerReturnFocus = document.activeElement;
     nameTargetClusterKey = key;
     nameOverlayWorld = world;
     nameInput.value = clusters[key] || '';
     overlay.classList.add('show');
     positionNameOverlay();
-    setTimeout(() => { try { nameInput.focus({preventScroll:true}); nameInput.select(); } catch(_){} }, 30);
+    setTimeout(() => {
+      if (!overlay.classList.contains('show')) return;
+      try { nameInput.focus({preventScroll:true}); nameInput.select(); } catch(_){}
+    }, 30);
   }
   function positionNameOverlay(){
     if (!nameOverlayWorld || !overlay.classList.contains('show')) return;
@@ -785,9 +867,12 @@ body{background:#06060f;color:var(--ink);
     overlay.style.top = y + 'px';
   }
   function closeNamer(){
+    const wasOpen = overlay.classList.contains('show');
     overlay.classList.remove('show');
     nameTargetClusterKey = null;
     nameOverlayWorld = null;
+    if (wasOpen) restoreFocus(namerReturnFocus, canvas);
+    namerReturnFocus = null;
   }
   nameSave.addEventListener('click', () => {
     let did = false;
@@ -809,18 +894,22 @@ body{background:#06060f;color:var(--ink);
 
   /* ==================== editing ==================== */
   function openEditorFor(starId){
-    const s = stars.find(x => x.id === starId);
+    const s = starById.get(starId);
     if (!s) return;
     closeNamer(); hideCtxMenu();
+    editorReturnFocus = document.activeElement;
     editingStarId = starId;
     editInput.value = s.text;
     editOverlay.classList.add('show');
     positionEditOverlay();
-    setTimeout(() => { try { editInput.focus({preventScroll:true}); editInput.select(); } catch(_){} }, 30);
+    setTimeout(() => {
+      if (!editOverlay.classList.contains('show')) return;
+      try { editInput.focus({preventScroll:true}); editInput.select(); } catch(_){}
+    }, 30);
   }
   function positionEditOverlay(){
     if (!editingStarId || !editOverlay.classList.contains('show')) return;
-    const s = stars.find(x => x.id === editingStarId);
+    const s = starById.get(editingStarId);
     if (!s) return;
     const p = worldToScreen(s.x, s.y);
     const r = editOverlay.getBoundingClientRect();
@@ -834,8 +923,11 @@ body{background:#06060f;color:var(--ink);
     editOverlay.style.top = y + 'px';
   }
   function closeEditor(){
+    const wasOpen = editOverlay.classList.contains('show');
     editOverlay.classList.remove('show');
     editingStarId = null;
+    if (wasOpen) restoreFocus(editorReturnFocus, canvas);
+    editorReturnFocus = null;
   }
   editSave.addEventListener('click', () => {
     const v = editInput.value.trim();
@@ -883,7 +975,7 @@ body{background:#06060f;color:var(--ink);
       if (action === 'edit'){
         openEditorFor(id);
       } else if (action === 'delete'){
-        const s = stars.find(x => x.id === id);
+        const s = starById.get(id);
         if (s && confirm('Delete this thought?')){
           removeStar(id);
           toast('Deleted.');
@@ -920,17 +1012,30 @@ body{background:#06060f;color:var(--ink);
   }
   function openPanel(){
     panel.classList.add('open');
-    panel.setAttribute('aria-expanded', 'true');
+    panel.removeAttribute('inert');
+    panel.setAttribute('aria-hidden', 'false');
     panelBackdrop.classList.add('show');
     allBtn.setAttribute('aria-expanded', 'true');
-    refreshPanel();
+    renderPanel();
+    setTimeout(() => {
+      if (!panel.classList.contains('open')) return;
+      try { panelClose.focus({ preventScroll: true }); } catch(_){}
+    }, 30);
   }
   function closePanel(){
+    const wasOpen = panel.classList.contains('open');
     disarmClear();
     panel.classList.remove('open');
-    panel.setAttribute('aria-expanded', 'false');
+    panel.setAttribute('aria-hidden', 'true');
+    panel.setAttribute('inert', '');
     panelBackdrop.classList.remove('show');
     allBtn.setAttribute('aria-expanded', 'false');
+    if (wasOpen){
+      const active = document.activeElement;
+      if (!active || active === document.body || panel.contains(active) || !allBtn.isConnected){
+        restoreFocus(allBtn, canvas);
+      }
+    }
   }
   allBtn.addEventListener('click', () => {
     if (panel.classList.contains('open')) closePanel();
@@ -938,6 +1043,17 @@ body{background:#06060f;color:var(--ink);
   });
   panelClose.addEventListener('click', closePanel);
   panelBackdrop.addEventListener('click', closePanel);
+
+  // keep Tab inside the modal panel while it is open
+  panel.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || !panel.classList.contains('open')) return;
+    const items = Array.from(panel.querySelectorAll('button, input, [href], [tabindex]:not([tabindex="-1"])'))
+      .filter(el => !el.disabled && el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
 
   clearAllBtn.addEventListener('click', () => {
     if (stars.length === 0){ toast('Nothing to clear.'); return; }
@@ -967,26 +1083,36 @@ body{background:#06060f;color:var(--ink);
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
   }
 
+  // recomputed only while the panel is actually on screen; a closed panel
+  // just waits and is rendered fresh the next time it opens
   function refreshPanel(){
+    if (!panel.classList.contains('open')) return;
+    renderPanel();
+  }
+
+  function renderPanel(){
     if (stars.length === 0){
       panelBody.innerHTML = '<p class="panel-empty">Nothing up here yet.<br>Write something below and place a star.</p>';
       return;
     }
+    const compIdx = componentIndex();
     const sorted = stars.slice().sort((a,b) => b.at - a.at);
     panelBody.innerHTML = sorted.map(s => {
-      const cluster = clusterForStar(s.id);
+      const members = compIdx.get(s.id);
+      const cluster = (members && members.length >= 3) ? { key: clusterKey(members), members } : null;
       const clusterName = cluster ? clusters[cluster.key] : null;
       const isFocused = s.id === selectedStar;
       const date = new Date(s.at).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
-      return `<div class="row ${isFocused ? 'focused' : ''}" data-id="${s.id}">
+      const eid = escapeHtml(s.id);
+      return `<div class="row${isFocused ? ' focused' : ''}" data-id="${eid}">
         <span class="star-dot" style="--c:${cssHueColor(s.hue, .9)}"></span>
-        <div class="row-main">
-          <p class="row-text">${escapeHtml(s.text)}</p>
-          <p class="row-meta">${date}${clusterName ? `<span class="row-cluster">· ${escapeHtml(clusterName)}</span>` : ''}</p>
-        </div>
+        <button type="button" class="row-main" aria-label="Show in the sky — ${escapeHtml(s.text)}, ${date}">
+          <span class="row-text">${escapeHtml(s.text)}</span>
+          <span class="row-meta">${date}${clusterName ? `<span class="row-cluster">· ${escapeHtml(clusterName)}</span>` : ''}</span>
+        </button>
         <div class="row-actions">
-          <button data-edit="${s.id}" aria-label="Edit" title="Edit">✎</button>
-          <button class="del" data-del="${s.id}" aria-label="Delete" title="Delete">×</button>
+          <button type="button" data-edit="${eid}" aria-label="Edit this thought" title="Edit">✎</button>
+          <button type="button" class="del" data-del="${eid}" aria-label="Delete this thought" title="Delete">×</button>
         </div>
       </div>`;
     }).join('');
@@ -1008,13 +1134,20 @@ body{background:#06060f;color:var(--ink);
       btn.addEventListener('click', e => {
         e.stopPropagation();
         const id = btn.dataset.del;
-        if (confirm('Delete this thought?')) removeStar(id);
+        if (confirm('Delete this thought?')){
+          removeStar(id);
+          // the row (and its button) is gone after re-render — keep focus in the panel
+          const active = document.activeElement;
+          if (!active || active === document.body || !panel.contains(active)){
+            try { panelClose.focus({ preventScroll: true }); } catch(_){}
+          }
+        }
       });
     });
   }
 
   function focusOnStar(id){
-    const s = stars.find(x => x.id === id);
+    const s = starById.get(id);
     if (!s) return;
     camTarget = { x: s.x, y: s.y };
     selectedStar = id;
@@ -1022,6 +1155,7 @@ body{background:#06060f;color:var(--ink);
 
   /* ==================== pointer ==================== */
   canvas.addEventListener('pointerdown', e => {
+    if (pointerDown) return;          // one pointer at a time — keeps drag math honest
     if (e.button === 2) return;
     hideCtxMenu();
 
@@ -1034,6 +1168,8 @@ body{background:#06060f;color:var(--ink);
       camX, camY,
       world,
       starId: star ? star.id : null,
+      grabDX: star ? world.x - star.x : 0,   // grab offset: the star keeps its place under the cursor
+      grabDY: star ? world.y - star.y : 0,
       moved: false,
       t: performance.now()
     };
@@ -1075,14 +1211,14 @@ body{background:#06060f;color:var(--ink);
     if (pointerDown.moved){
       if (pointerDown.starId){
         const w = screenToWorld(e.clientX, e.clientY);
-        const s = stars.find(x => x.id === pointerDown.starId);
-        if (s){ s.x = w.x; s.y = w.y; }
+        const s = starById.get(pointerDown.starId);
+        if (s){ s.x = w.x - pointerDown.grabDX; s.y = w.y - pointerDown.grabDY; }
       } else {
         camX = pointerDown.camX - dx / zoom;
         camY = pointerDown.camY - dy / zoom;
       }
     } else if (selectedStar){
-      const a = stars.find(x => x.id === selectedStar);
+      const a = starById.get(selectedStar);
       if (a){
         const w = screenToWorld(e.clientX, e.clientY);
         linkingAnimation = { from: a, toX: w.x, toY: w.y };
@@ -1139,14 +1275,7 @@ body{background:#06060f;color:var(--ink);
     }
 
     if (placing){
-      addStar(world.x, world.y, thoughtEl.value.trim());
-      thoughtEl.value = '';
-      goBtn.disabled = true;
-      placing = false;
-      compose.classList.remove('armed');
-      canvas.classList.remove('placing');
-      selectedStar = stars[stars.length - 1].id;
-      toast('Star placed. Click another star to connect.');
+      placeStarAt(world.x, world.y);
       return;
     }
 
@@ -1178,20 +1307,46 @@ body{background:#06060f;color:var(--ink);
   });
 
   /* ==================== compose bar ==================== */
+  function setComposeReady(ok){
+    goBtn.disabled = !ok;
+    placeBtn.disabled = !ok;
+  }
+  function cancelPlacing(){
+    placing = false;
+    compose.classList.remove('armed');
+    canvas.classList.remove('placing');
+  }
+  function viewCenterWorld(){ return screenToWorld(W / 2, H / 2); }
+
+  // one shared path for pointer, keyboard and the "Place" button
+  function placeStarAt(wx, wy){
+    const text = thoughtEl.value.trim();
+    if (!text){ cancelPlacing(); return null; }
+    addStar(wx, wy, text);
+    thoughtEl.value = '';
+    setComposeReady(false);
+    cancelPlacing();
+    selectedStar = stars[stars.length - 1].id;
+    toast('Star placed. Click another star — or press Enter on it — to connect.');
+    return selectedStar;
+  }
+
   thoughtEl.addEventListener('input', () => {
     const ok = !!thoughtEl.value.trim();
-    goBtn.disabled = !ok;
-    if (!ok && placing){
-      placing = false;
-      compose.classList.remove('armed');
-      canvas.classList.remove('placing');
-    }
+    setComposeReady(ok);
+    if (!ok && placing) cancelPlacing();
   });
   thoughtEl.addEventListener('keydown', e => {
     if (e.key === 'Enter'){ e.preventDefault(); armPlacement(); }
-    if (e.key === 'Escape'){ placing = false; compose.classList.remove('armed'); canvas.classList.remove('placing'); }
+    if (e.key === 'Escape'){ cancelPlacing(); }
   });
   goBtn.addEventListener('click', armPlacement);
+  placeBtn.addEventListener('click', () => {
+    const c = viewCenterWorld();
+    placeStarAt(c.x, c.y);
+    // the button disables itself once the thought is released — keep typing going
+    try { thoughtEl.focus({ preventScroll: true }); } catch(_){}
+  });
 
   function armPlacement(){
     if (!thoughtEl.value.trim()) return;
@@ -1200,8 +1355,60 @@ body{background:#06060f;color:var(--ink);
     compose.classList.add('armed');
     canvas.classList.add('placing');
     sfxArm();
-    toast('Click the sky to place your star.');
+    toast('Click the sky — or press Enter on it — to place your star.');
   }
+
+  /* keyboard on the sky: Enter/Space places at the view centre while armed,
+     otherwise it selects (or links) the star nearest the centre */
+  function canvasActivate(){
+    hideCtxMenu();
+    if (placing){
+      const c = viewCenterWorld();
+      placeStarAt(c.x, c.y);
+      return;
+    }
+    const c = viewCenterWorld();
+    let best = null, bestD = 90 * 90;
+    for (const s of stars){
+      const dx = s.x - c.x, dy = s.y - c.y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD){ bestD = d; best = s; }
+    }
+    if (best){
+      if (!selectedStar){
+        selectedStar = best.id;
+        sfxSelect();
+      } else if (selectedStar === best.id){
+        selectedStar = null;
+        sfxDeselect();
+      } else {
+        connect(selectedStar, best.id);
+        toast('Linked.');
+        selectedStar = null;
+      }
+    } else if (selectedStar){
+      selectedStar = null;
+      sfxDeselect();
+    } else {
+      toast('The centre of the view is empty.');
+    }
+  }
+  canvas.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'){
+      e.preventDefault();
+      canvasActivate();
+    } else if (e.key === 'Escape'){
+      cancelPlacing();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown'){
+      e.preventDefault();
+      camTarget = null;
+      const step = 120;
+      if (e.key === 'ArrowLeft') camX -= step;
+      if (e.key === 'ArrowRight') camX += step;
+      if (e.key === 'ArrowUp') camY -= step;
+      if (e.key === 'ArrowDown') camY += step;
+    }
+  });
 
   /* ==================== effects ==================== */
   function stepFX(dt){
@@ -1283,8 +1490,8 @@ body{background:#06060f;color:var(--ink);
     ctx.globalAlpha = 1;
 
     for (const c of connections){
-      const a = stars.find(s => s.id === c.a);
-      const b = stars.find(s => s.id === c.b);
+      const a = starById.get(c.a);
+      const b = starById.get(c.b);
       if (!a || !b) continue;
       const pa = worldToScreen(a.x, a.y);
       const pb = worldToScreen(b.x, b.y);
@@ -1340,7 +1547,7 @@ body{background:#06060f;color:var(--ink);
     }
 
     if (selectedStar){
-      const s = stars.find(x => x.id === selectedStar);
+      const s = starById.get(selectedStar);
       if (s){
         const p = worldToScreen(s.x, s.y);
         const rect = labelRectFor(s.text, p.x, p.y + 26);
@@ -1348,7 +1555,7 @@ body{background:#06060f;color:var(--ink);
         labelHits.push({ ...rect, starId: s.id });
       }
     } else if (hoverStar){
-      const s = stars.find(x => x.id === hoverStar);
+      const s = starById.get(hoverStar);
       if (s){
         const p = worldToScreen(s.x, s.y);
         const rect = labelRectFor(s.text, p.x, p.y + 26);
@@ -1357,7 +1564,7 @@ body{background:#06060f;color:var(--ink);
       }
     }
 
-    const comps = components();
+    const comps = getComponents();
     for (const members of comps){
       if (members.length < 3) continue;
       const c = centroid(members);
@@ -1491,14 +1698,14 @@ body{background:#06060f;color:var(--ink);
     }
 
     if (selected){
-      const p = .75 + .25 * Math.sin(time * 2.6);
+      const p = calm ? .9 : (.75 + .25 * Math.sin(time * 2.6));
       ctx.strokeStyle = `rgba(255,225,160,${.75 * p})`;
       ctx.lineWidth = 1.4;
       ctx.beginPath();
       ctx.arc(x, y, coreR * 2.6, 0, 6.28);
       ctx.stroke();
       for (let i = 0; i < 3; i++){
-        const a = time * 1.4 + i * 2.09;
+        const a = calm ? i * 2.09 : (time * 1.4 + i * 2.09);
         const rr = coreR * 3.2;
         ctx.fillStyle = `rgba(255,240,200,${.8})`;
         ctx.beginPath();
@@ -1570,7 +1777,7 @@ body{background:#06060f;color:var(--ink);
   }
 
   function drawNameAffordance(x, y, key, world){
-    const p = .7 + .3 * Math.sin(time * 3);
+    const p = calm ? 1 : (.7 + .3 * Math.sin(time * 3));
     ctx.globalAlpha = .45 * p;
     ctx.strokeStyle = 'rgba(200,220,255,1)';
     ctx.setLineDash([3, 4]);

@@ -7,7 +7,7 @@
 <meta name="description" content="Pick a shape. Swing the hammer. Watch it fall, then rise.">
 <meta name="theme-color" content="#0c1016">
 <style>
-:root{--ink:#e0e6f0;--mute:#8895a8;--dim:#5a6474;--line:rgba(200,215,235,.16);--accent:200,215,235}
+:root{--ink:#e0e6f0;--mute:#8895a8;--dim:#5a6474;--line:rgba(255,255,255,.12);--accent:200,215,235;--ring:rgba(200,215,235,.85);--ease:cubic-bezier(.2,.7,.3,1)}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden}
 body{
@@ -19,18 +19,16 @@ body{
 }
 #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
   touch-action:none;cursor:pointer}
-.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+.back,.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:5;
+  width:38px;height:38px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);border:1px solid var(--line);
   background:rgba(20,26,36,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
-.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
-  background:rgba(20,26,36,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+  box-shadow:0 6px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease),transform .15s var(--ease)}
+.back{left:14px;text-decoration:none}
+.mute{right:14px;padding:0;margin:0;cursor:pointer}
+.back:hover,.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.12)}
+.back:active,.mute:active{transform:scale(.94)}
 .mute svg{width:16px;height:16px}
 .mute .m{display:block}.mute .x{display:none}
 .mute.off .m{display:none}.mute.off .x{display:block}
@@ -44,10 +42,11 @@ body{
   background:rgba(20,26,36,.55);
   backdrop-filter:blur(8px);
   border:1px solid var(--line);
-  transition:opacity .35s ease;
+  box-shadow:0 14px 36px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:opacity .35s ease,filter .35s ease;
 }
 .shapes[data-locked="true"]{
-  opacity:.35;pointer-events:none;
+  opacity:.35;filter:saturate(.4);pointer-events:none;
 }
 .shape-btn{
   width:34px;height:34px;
@@ -56,15 +55,18 @@ body{
   background:none;border:1px solid transparent;
   color:var(--mute);cursor:pointer;
   padding:0;margin:0;
-  transition:color .25s,border-color .25s,background .25s,box-shadow .25s;
+  transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease),box-shadow .2s var(--ease),transform .15s var(--ease);
 }
-.shape-btn:hover{color:var(--ink);border-color:rgba(var(--accent),.3);background:rgba(var(--accent),.06)}
+.shape-btn:hover{color:var(--ink);border-color:rgba(var(--accent),.35);background:rgba(var(--accent),.08)}
+.shape-btn:active:not(:disabled){transform:scale(.92)}
 .shape-btn.active{
   color:var(--ink);
-  border-color:rgba(var(--accent),.55);
-  background:rgba(var(--accent),.14);
-  box-shadow:0 0 12px rgba(var(--accent),.25);
+  border-color:rgba(var(--accent),.65);
+  background:rgba(var(--accent),.16);
+  box-shadow:0 0 12px rgba(var(--accent),.25),inset 0 1px 0 rgba(255,255,255,.14);
 }
+.shape-btn.active svg,.shape-btn.active svg *{stroke-width:2.2}
+.shape-btn:disabled{color:var(--dim);border-color:transparent;background:none;box-shadow:none;cursor:default}
 .shape-btn svg{width:18px;height:18px;display:block}
 
 .hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);
@@ -73,11 +75,16 @@ body{
   font-style:italic;pointer-events:none;transition:opacity .6s ease;text-align:center;
   padding:0 20px;line-height:1.9}
 .hint.fade{opacity:0}
+.back:focus-visible,.mute:focus-visible,.shape-btn:focus-visible{
+  outline:2px solid var(--ring);outline-offset:3px;color:var(--ink)}
+#c:focus-visible{outline:2px solid var(--ring);outline-offset:-4px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
 </style>
 </head>
 <body>
-<canvas id="c" aria-hidden="true"></canvas>
+<canvas id="c" role="button" tabindex="0" aria-label="Glass pane. Press Enter or Space to swing the hammer."></canvas>
 <a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
 <button class="mute" id="mute" aria-label="Mute sound" aria-pressed="false">
   <svg class="m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -91,27 +98,29 @@ body{
 </button>
 
 <div class="shapes" id="shapes" role="radiogroup" aria-label="Glass shape">
-  <button class="shape-btn active" data-shape="square" role="radio" aria-checked="true" aria-label="Square">
+  <button class="shape-btn active" data-shape="square" role="radio" aria-checked="true" tabindex="0" aria-label="Square">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
   </button>
-  <button class="shape-btn" data-shape="circle" role="radio" aria-checked="false" aria-label="Circle">
+  <button class="shape-btn" data-shape="circle" role="radio" aria-checked="false" tabindex="-1" aria-label="Circle">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/></svg>
   </button>
-  <button class="shape-btn" data-shape="diamond" role="radio" aria-checked="false" aria-label="Diamond">
+  <button class="shape-btn" data-shape="diamond" role="radio" aria-checked="false" tabindex="-1" aria-label="Diamond">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/></svg>
   </button>
-  <button class="shape-btn" data-shape="hexagon" role="radio" aria-checked="false" aria-label="Hexagon">
+  <button class="shape-btn" data-shape="hexagon" role="radio" aria-checked="false" tabindex="-1" aria-label="Hexagon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5 19.5 7.75v8.5L12 20.5 4.5 16.25v-8.5z"/></svg>
   </button>
-  <button class="shape-btn" data-shape="triangle" role="radio" aria-checked="false" aria-label="Triangle">
+  <button class="shape-btn" data-shape="triangle" role="radio" aria-checked="false" tabindex="-1" aria-label="Triangle">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5 21 19.5H3z"/></svg>
   </button>
-  <button class="shape-btn" data-shape="star" role="radio" aria-checked="false" aria-label="Star">
+  <button class="shape-btn" data-shape="star" role="radio" aria-checked="false" tabindex="-1" aria-label="Star">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 3.2 14.7 9.6 21.6 10.2 16.4 14.7 17.9 21.4 12 17.9 6.1 21.4 7.6 14.7 2.4 10.2 9.3 9.6z"/></svg>
   </button>
 </div>
 
-<p class="hint" id="hint">Tap the glass</p>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<p class="hint" id="hint">Tap the glass, or press Enter</p>
 
 <script>
 (() => {
@@ -121,6 +130,15 @@ body{
   const muteBtn = $('#mute');
   const shapesEl = $('#shapes');
   const shapeBtns = [...document.querySelectorAll('.shape-btn')];
+  const live = $('#live');
+  const say = msg => { live.textContent = msg; };
+
+  /* ==================== reduced motion ==================== */
+  const calmMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  let calm = calmMQ.matches;
+  const onCalmChange = e => { calm = e.matches; };
+  if (calmMQ.addEventListener) calmMQ.addEventListener('change', onCalmChange);
+  else if (calmMQ.addListener) calmMQ.addListener(onCalmChange);
 
   /* ==================== canvas ==================== */
   let W = 0, H = 0, dpr = 1;
@@ -413,7 +431,7 @@ body{
   const paintMute = () => {
     muteBtn.classList.toggle('off', muted);
     muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
   };
   muteBtn.addEventListener('click', () => {
     muted = !muted;
@@ -433,6 +451,7 @@ body{
   let healingGlow = 0;
   let pendingTinkles = [];
   let hammer = null;
+  let flashT = 0;
 
   const DUR = {
     cracking: 280,
@@ -555,6 +574,13 @@ body{
       hit: false,
       done: false
     };
+    if (calm){
+      /* Softer swing: shorter arc, quicker snap, gentle recoil. */
+      hammer.angFrom = -1.05;
+      hammer.ang = -1.05;
+      hammer.strikeDur = 170;
+      hammer.recoilDur = 240;
+    }
     if (AC && !muted) playHammerWhoosh(AC.currentTime);
     state = 'hammering';
     stateT = performance.now();
@@ -668,17 +694,19 @@ body{
     }
 
     glints = [];
-    for (let i = 0; i < 18; i++){
+    const glintN = calm ? 6 : 22;
+    for (let i = 0; i < glintN; i++){
       const a = Math.random() * Math.PI * 2;
-      const sp = 0.8 + Math.random() * 2.2;
+      const sp = calm ? 0.3 + Math.random() * 0.7 : 0.8 + Math.random() * 2.4;
       glints.push({
         x: ix, y: iy,
         vx: Math.cos(a) * sp,
         vy: Math.sin(a) * sp,
         life: 1,
-        decay: 0.04 + Math.random() * 0.02
+        decay: calm ? 0.12 : 0.04 + Math.random() * 0.02
       });
     }
+    flashT = 1;
 
     buildShards(ix, iy);
     state = 'cracking';
@@ -688,10 +716,20 @@ body{
   function beginShatter(){
     state = 'shattering';
     stateT = performance.now();
+    say('Shattered');
     const ix = impact.x, iy = impact.y;
     const fy = floorY();
 
     for (const s of shards){
+      if (calm){
+        /* Reduced motion: shards appear and rest in place — no viewport travel. */
+        s.sState = 'resting';
+        s.pos.x = s.homeX;
+        s.pos.y = s.homeY;
+        s.rot = 0;
+        s.vel.x = 0; s.vel.y = 0; s.velRot = 0;
+        continue;
+      }
       s.sState = 'flying';
       const dx = s.homeX - ix, dy = s.homeY - iy;
       const d = Math.hypot(dx, dy) || 1;
@@ -703,7 +741,7 @@ body{
       s.restY = fy - 6 - Math.random() * 14;
     }
 
-    shockwave = { x: ix, y: iy, r: 8, maxR: Math.max(W, H) * 0.7, life: 1 };
+    if (!calm) shockwave = { x: ix, y: iy, r: 8, maxR: Math.max(W, H) * 0.7, life: 1 };
 
     pendingTinkles = [];
     if (AC && !muted){
@@ -768,13 +806,15 @@ body{
     state = 'intact';
     stateT = performance.now();
     impact = null;
+    flashT = 0;
     shards = [];
     crackRays = [];
     glints = [];
     shockwave = null;
     clearPendingTinkles();
     hint.classList.remove('fade');
-    shapesEl.dataset.locked = 'false';
+    setShapesLocked(false);
+    say('Reassembled. Ready.');
   }
 
   /* ==================== update ==================== */
@@ -797,6 +837,7 @@ body{
 
     else if (state === 'cracking'){
       updateHammer();
+      if (flashT > 0) flashT *= Math.pow(0.86, dt);
       for (let i = glints.length - 1; i >= 0; i--){
         const g = glints[i];
         g.life -= g.decay * dt;
@@ -875,7 +916,7 @@ body{
         if (s.sState === 'returning'){
           const t = Math.min(1, (now - s.returnStart) / s.returnDur);
           const k = easeInOutCubic(t);
-          const arc = Math.sin(k * Math.PI) * 32;
+          const arc = calm ? 0 : Math.sin(k * Math.PI) * 32;
           s.pos.x = lerp(s.returnFrom.x, s.homeX, k);
           s.pos.y = lerp(s.returnFrom.y, s.homeY, k) - arc;
           s.rot = lerp(s.returnFrom.rot, 0, k);
@@ -1007,11 +1048,24 @@ body{
       const a = g.life;
       const rr = 3 + (1 - a) * 5;
       const grd = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, rr);
-      grd.addColorStop(0, `rgba(255,255,255,${a})`);
+      grd.addColorStop(0, `rgba(255,255,255,${Math.min(1, a * 1.15)})`);
       grd.addColorStop(1, 'rgba(200,220,255,0)');
       ctx.fillStyle = grd;
       ctx.fillRect(g.x - rr, g.y - rr, rr * 2, rr * 2);
     }
+  }
+
+  function drawImpactBloom(){
+    if (flashT <= 0 || !impact) return;
+    const r = (calm ? 40 : 90) + (1 - flashT) * (calm ? 16 : 70);
+    const grd = ctx.createRadialGradient(impact.x, impact.y, 0, impact.x, impact.y, r);
+    grd.addColorStop(0, `rgba(255,255,255,${flashT * (calm ? 0.3 : 0.6)})`);
+    grd.addColorStop(1, 'rgba(220,235,255,0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = grd;
+    ctx.fillRect(impact.x - r, impact.y - r, r * 2, r * 2);
+    ctx.restore();
   }
 
   function drawShockwave(){
@@ -1077,6 +1131,7 @@ body{
       drawIntactPane();
       drawCracks();
       drawGlints();
+      drawImpactBloom();
     } else if (state === 'shattering' || state === 'settled' || state === 'reassembling'){
       drawShards();
       drawShockwave();
@@ -1116,6 +1171,15 @@ body{
   }
 
   /* ==================== input ==================== */
+  let lastSwing = null;
+
+  function setShapesLocked(lock){
+    shapesEl.dataset.locked = lock ? 'true' : 'false';
+    shapeBtns.forEach(b => { b.disabled = lock; });
+    if (!lock) syncRoving();
+    if (lock && shapeBtns.includes(document.activeElement)) cv.focus();
+  }
+
   cv.addEventListener('pointerdown', e => {
     if (state !== 'intact') return;
     const r = cv.getBoundingClientRect();
@@ -1123,13 +1187,53 @@ body{
     const my = e.clientY - r.top;
     const verts = shapeVertsScreen();
     if (!pointInPoly(mx, my, verts)) return;
+    lastSwing = { x: mx, y: my };
     hint.classList.add('fade');
-    shapesEl.dataset.locked = 'true';
+    setShapesLocked(true);
     ensureAudio();
     beginHammer(mx, my);
   }, { passive: true });
 
+  cv.addEventListener('keydown', e => {
+    const key = e.key;
+    if (key !== 'Enter' && key !== ' ' && key !== 'Spacebar') return;
+    /* Only act when the canvas itself is the event target, and only then
+       prevent default (avoids Space scrolling the page). Other controls
+       never receive this event because the listener lives on the canvas. */
+    e.preventDefault();
+    if (state !== 'intact') return;
+    const verts = shapeVertsScreen();
+    const p = lastSwing && pointInPoly(lastSwing.x, lastSwing.y, verts)
+      ? lastSwing
+      : { x: pane.x + pane.w / 2, y: pane.y + pane.h / 2 };
+    hint.classList.add('fade');
+    setShapesLocked(true);
+    ensureAudio();
+    beginHammer(p.x, p.y);
+  });
+
   /* ==================== shape picker ==================== */
+  function syncRoving(){
+    shapeBtns.forEach(x => {
+      x.tabIndex = x.getAttribute('aria-checked') === 'true' ? 0 : -1;
+    });
+  }
+
+  const ROW_KEYS = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+  shapesEl.addEventListener('keydown', e => {
+    if (!ROW_KEYS.includes(e.key)) return;
+    const idx = shapeBtns.indexOf(document.activeElement);
+    if (idx < 0 || shapesEl.dataset.locked === 'true') return;
+    e.preventDefault();
+    let next = idx;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (idx + 1) % shapeBtns.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (idx - 1 + shapeBtns.length) % shapeBtns.length;
+    else if (e.key === 'Home') next = 0;
+    else next = shapeBtns.length - 1;
+    shapeBtns[next].focus();
+    shapeBtns[next].click(); /* radios: arrows move and select */
+  });
+
   shapeBtns.forEach(b => {
     b.addEventListener('click', () => {
       if (state !== 'intact') return;
@@ -1139,13 +1243,14 @@ body{
         x.classList.toggle('active', on);
         x.setAttribute('aria-checked', String(on));
       });
+      syncRoving();
       gradientsDirty = true;
     });
   });
 
   /* ==================== boot ==================== */
   resize();
-  shapesEl.dataset.locked = 'false';
+  setShapesLocked(false);
   paintMute();
   requestAnimationFrame(frame);
 })();

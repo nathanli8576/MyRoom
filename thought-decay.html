@@ -48,16 +48,21 @@ button:disabled{opacity:.35;cursor:default}
 .after{opacity:0;pointer-events:none;transition:opacity 1.2s ease;display:flex;flex-direction:column;align-items:center;padding-top:6px}
 .after.show{opacity:1;pointer-events:auto}
 .status{margin:0;color:var(--mute);font-style:italic;font-size:16px;min-height:1.6em}
-.after button{margin-top:16px;opacity:0;transition:opacity 1.4s ease .5s,box-shadow .4s}
-.after.ready button{opacity:1}
+/* Buttons stay visibility:hidden (not just opacity 0) until the dissolve finishes, so they can
+   never receive focus or a stray click while invisible. */
+.after button{margin-top:16px;opacity:0;visibility:hidden;transition:opacity 1.4s ease .5s,box-shadow .4s,visibility 0s linear 1.9s}
+.after.ready button{opacity:1;visibility:visible;transition:opacity 1.4s ease .5s,box-shadow .4s,visibility 0s}
+.after:focus{outline:none}
 .seeds{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
-.seed{margin:0;padding:7px 14px;font-size:13px;letter-spacing:.04em;color:var(--mute);background:rgba(255,255,255,.03);border:1px solid var(--line);display:inline-flex;align-items:center;gap:8px}
+.seed{margin:0;padding:7px 14px;font-size:13px;letter-spacing:.04em;color:var(--mute);background:rgba(255,255,255,.03);border:1px solid var(--line);display:inline-flex;align-items:center;gap:8px;
+ transition:color .2s,border-color .2s,background .2s,box-shadow .2s}
+.seed:hover{color:var(--ink);border-color:rgba(var(--mint),.45);background:rgba(var(--mint),.06)}
 .seed i{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);opacity:.6}
 .seed[aria-checked=true]{color:var(--ink);border-color:rgba(var(--mint),.5);background:rgba(var(--mint),.08)}
 .seed[aria-checked=true] i{opacity:1}
 /* character counter — sits in the textarea's own top-right padding, fades in only once you type */
 .count{position:absolute;top:10px;right:14px;font-size:11px;letter-spacing:.06em;color:#7e8c9f;
- font-style:normal;opacity:0;transition:opacity .35s ease,color .35s ease;pointer-events:none}
+ font-style:normal;font-variant-numeric:tabular-nums;opacity:0;transition:opacity .35s ease,color .35s ease;pointer-events:none}
 .count.on{opacity:.7}
 .count.near{color:#e8b86a;opacity:.95}
 /* back button — top-left, mirrors the mute button's footprint */
@@ -67,9 +72,10 @@ button:disabled{opacity:.35;cursor:default}
  background:rgba(255,255,255,.04);backdrop-filter:blur(6px);
  transition:color .3s,border-color .3s,background .3s}
 .back:hover{color:var(--ink);border-color:rgba(var(--mint),.5);background:rgba(var(--mint),.08)}
+.back:focus-visible{outline:2px solid rgba(var(--mint),.8);outline-offset:3px}
 .mute{position:fixed;z-index:2;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;margin:0;width:38px;height:38px;padding:0;display:grid;place-items:center;color:var(--mute);background:rgba(255,255,255,.04);border-color:var(--line)}
 .mute .x{display:none}.mute.off .w{display:none}.mute.off .x{display:inline}
-.forest{position:fixed;z-index:1;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);margin:0;font-size:12px;color:#7e8c9f;font-style:italic;pointer-events:none;max-width:calc(100% - 190px);text-align:left}
+.forest{position:fixed;z-index:1;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);margin:0;font-size:12px;color:#7e8c9f;font-style:italic;font-variant-numeric:tabular-nums;pointer-events:none;max-width:calc(100% - 190px);text-align:left}
 /* reset — subtle until hovered, mirrors the mute button's footprint but flat */
 .reset{position:fixed;z-index:2;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);margin:0;padding:7px 14px;
  min-width:104px;text-align:center;font-size:12px;letter-spacing:.06em;color:#7e8c9f;background:rgba(255,255,255,.03);
@@ -92,7 +98,7 @@ button:disabled{opacity:.35;cursor:default}
  box-shadow:0 0 30px rgba(var(--mint),.2);will-change:transform}
 .bl{margin:12px 0 10px;min-height:1.4em;font-size:15px;letter-spacing:.14em;color:#b9ead6}
 .after .ghost{margin-top:8px;padding:6px 14px;font-size:13px;background:none;border-color:transparent;color:var(--mute)}
-@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;transition-delay:0s!important}}
 </style>
 </head>
 <body>
@@ -116,7 +122,7 @@ button:disabled{opacity:.35;cursor:default}
       </div>
       <button id="release" disabled>Release &amp; Decay</button>
     </section>
-    <div class="after" id="after" inert>
+    <div class="after" id="after" tabindex="-1" inert>
       <div class="breath" id="breath" aria-hidden="true"></div>
       <p class="bl" id="bl"></p>
       <p class="status" id="status" aria-live="polite"></p>
@@ -385,17 +391,18 @@ button:disabled{opacity:.35;cursor:default}
   let plants = [0, 1, 2].map(() => ({ k: newK(), g: 0 })), forest = [], count = 0, sel = 0;   // one living tree per species
   let restored = false;                                // did this session actually load a save?
   try {
-    const d = JSON.parse(localStorage.getItem(KEY) || 'null'), ok = Number.isFinite;
+    const d = JSON.parse(localStorage.getItem(KEY) || 'null'), ok = Number.isFinite,
+          spec = v => Number.isInteger(v) && v >= 0 && v < SPECIES.length;   // never trust an index from storage
     if (d && Array.isArray(d.p)) {
       d.p.slice(0, 3).forEach((p, i) => { if (p && ok(p.k) && ok(p.g)) plants[i] = { k: p.k, g: clamp(p.g, 0, GMAX) }; });
-      (d.done || []).forEach(f => { if (SPECIES[f.s] && ok(f.k)) forest.push({ s: f.s, k: f.k, g: GMAX }); });
-      count = ok(d.n) ? d.n : 0; sel = SPECIES[d.sel] ? d.sel : 0;
+      (d.done || []).forEach(f => { if (f && spec(f.s) && ok(f.k)) forest.push({ s: f.s, k: f.k, g: GMAX }); });
+      count = ok(d.n) ? d.n : 0; sel = spec(d.sel) ? d.sel : 0;
       restored = count > 0 || forest.length > 0 || plants.some(p => p.g > .05);
     } else {                                           // carry over a v1 save
       const o = JSON.parse(localStorage.getItem('thought-decay:forest:v1') || 'null');
-      if (o && o.act && SPECIES[o.act.s] && ok(o.act.k) && ok(o.act.g)) {
+      if (o && o.act && spec(o.act.s) && ok(o.act.k) && ok(o.act.g)) {
         plants[o.act.s] = { k: o.act.k, g: clamp(o.act.g, 0, GMAX) }; sel = o.act.s; count = ok(o.n) ? o.n : 0;
-        (o.done || []).forEach(f => { if (SPECIES[f.s] && ok(f.k) && f.g >= GMAX - .2) forest.push({ s: f.s, k: f.k, g: GMAX }); });
+        (o.done || []).forEach(f => { if (f && spec(f.s) && ok(f.k) && f.g >= GMAX - .2) forest.push({ s: f.s, k: f.k, g: GMAX }); });
         restored = true;
       }
     }
@@ -420,10 +427,11 @@ button:disabled{opacity:.35;cursor:default}
       f.img = null;
     }
   }
-  function snap(f) {                       // cached hi-res image of a finished tree, rebuilt after a resize
-    const q = Math.min(2, dpr), cw = Math.ceil(L * 6), ch = Math.ceil(L * 4.6), [o, c] = mkc(cw * q, ch * q);
+  function snap(f, q) {                     // cached hi-res image of a finished tree, rebuilt after a resize or scale change
+    q = q || Math.min(2, dpr);
+    const cw = Math.ceil(L * 6), ch = Math.ceil(L * 4.6), [o, c] = mkc(cw * q, ch * q);
     c.setTransform(q, 0, 0, q, 0, 0); drawTree(c, f.s, f.k, f.g, cw / 2, ch - 6, 0, false, null, q);
-    f.img = o; f.gen = gen; f.cw = cw; f.ch = ch;
+    f.img = o; f.gen = gen; f.snapScale = q; f.cw = cw; f.ch = ch;
   }
 
   /* ---------- Web Audio: synthesized chime + growth hum ---------- */
@@ -564,8 +572,11 @@ button:disabled{opacity:.35;cursor:default}
     card.classList.add('gone');
     card.inert = true;                               // remove the decaying card from the tab order
     after.inert = false;                             // un-inert BEFORE writing the live region,
-    status.textContent = 'Dissolving…';              // otherwise the polite announcement is suppressed
     after.classList.remove('ready'); after.classList.add('show');
+    /* Inerting the card dropped focus to <body>; hand it straight to the after-panel. Its buttons
+       stay visibility:hidden until .ready, so nothing invisible can be focused meanwhile. */
+    after.focus({ preventScroll: true });
+    status.textContent = 'Dissolving…';              // otherwise the polite announcement is suppressed
     t0 = performance.now();
     if (audio()) { chime(); startHum(); }
   }
@@ -670,10 +681,15 @@ button:disabled{opacity:.35;cursor:default}
     drawGround(ts);
 
     const n0 = Math.max(0, forest.length - 10);          // retired trees keep fixed slots, so nothing shifts or flickers
+    /* Trees that have slid out of the drawn window give back their full-resolution snapshot and
+       branch geometry (several MB each) immediately, instead of hoarding them until the MAX_FOREST
+       trim at the front of the list. */
+    for (let j = 0; j < n0; j++) { const f = forest[j]; f.img = null; trees.delete(f.s + ':' + f.k); }
+    const sq = Math.min(2, dpr);          // snapshot scale for the *current* surface (differs during PNG export)
     for (let j = n0; j < forest.length; j++) {
       const f = forest[j], sl = j % 10, st = sl >> 1, x = bx + (sl % 2 ? 1 : -1) * (L * 2.7 + st * L * 1.7);
       if (x < 24 || x > W - 24) continue;
-      if (f.gen !== gen || !f.img) snap(f);
+      if (f.gen !== gen || f.snapScale !== sq || !f.img) snap(f, sq);
       const sc = .62 - st * .03; ctx.globalAlpha = .78;
       ctx.drawImage(f.img, x - f.cw * sc / 2, by - 3 - (st % 2) * 4 - (f.ch - 6) * sc, f.cw * sc, f.ch * sc);
     }
@@ -697,6 +713,7 @@ button:disabled{opacity:.35;cursor:default}
   let last = performance.now(), lastLab = '', windAmp = 1, wb = 0;
   const ease = x => x * x * (3 - 2 * x);
   function frame(ts) {
+    requestAnimationFrame(frame);                    // schedule FIRST: one bad frame must never kill the loop permanently
     const dt = Math.min(3, (ts - last) / 16.667 || 1); last = ts;
     G += (Gt - G) * (1 - Math.pow(.97, dt)); pulse *= Math.pow(.96, dt); tickHum(dt);
     wb += ((after.classList.contains('show') ? 1 : 0) - wb) * .02 * dt;      // wind picks up while thoughts are absorbed and while you breathe
@@ -733,8 +750,11 @@ button:disabled{opacity:.35;cursor:default}
       phase = 'done'; stopHum(); save(); syncFlora();
       status.textContent = Gt >= GMAX - .02 ? 'Full bloom. This tree joins your forest when you plant the next seed.' : 'Released. Something small is growing.';
       after.classList.add('ready');
+      /* The buttons just became visible; if focus is still parked on the panel (or fell to
+         <body>), put it on the primary action so Tab doesn't restart from the top of the page. */
+      const ae = document.activeElement;
+      if (!ae || ae === document.body || ae === after) again.focus({ preventScroll: true });
     }
-    requestAnimationFrame(frame);
   }
 
   /* ---------- PNG export: scene only, no UI text, re-rendered at high resolution ---------- */
@@ -748,9 +768,14 @@ button:disabled{opacity:.35;cursor:default}
     try { scene(performance.now(), 0, false); } finally { ctx = oc; dpr = od; }
     xo.toBlob(async b => {
       if (!b) return;
-      let dl = null; try { dl = window.claude && await window.claude.use('downloads'); } catch (e) {}
-      if (dl) { try { await dl.save({ filename: 'thought-decay-forest.png', data: b }); } catch (e) {} }
-      else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'thought-decay-forest.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+      let saved = false;
+      try {                                   // optional host bridge — anything goes wrong, fall back to a plain download
+        if (window.claude && typeof window.claude.use === 'function') {
+          const dl = await window.claude.use('downloads');
+          if (dl && typeof dl.save === 'function') { await dl.save({ filename: 'thought-decay-forest.png', data: b }); saved = true; }
+        }
+      } catch (e) {}
+      if (!saved) { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'thought-decay-forest.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
     }, 'image/png');
   }
 
@@ -812,7 +837,10 @@ button:disabled{opacity:.35;cursor:default}
     toast('Forest cleared');
   }
 
-  const paintMute = () => { muteB.classList.toggle('off', muted); muteB.setAttribute('aria-pressed', muted); muteB.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound'); };
+  /* Constant accessible name + aria-pressed: with the name flipped as well, a muted state was
+     announced as "Unmute sound, pressed" — a contradiction. The title stays dynamic because a
+     tooltip is read on hover, not by the screen reader's virtual cursor. */
+  const paintMute = () => { muteB.classList.toggle('off', muted); muteB.setAttribute('aria-pressed', muted); muteB.title = muted ? 'Unmute sound' : 'Mute sound'; };
   muteB.addEventListener('click', () => {
     muted = !muted; try { localStorage.setItem(MKEY, muted ? '1' : '0'); } catch (e) {}
     if (ensureAudio()) master.gain.setTargetAtTime(muted ? 0 : .7, AC.currentTime, .05);

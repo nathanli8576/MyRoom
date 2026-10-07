@@ -19,18 +19,19 @@ body{
   -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
   display:flex;flex-direction:column;height:100%;
 }
-.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
+.back,.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:5;
   width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+  color:var(--mute);border:1px solid rgba(255,255,255,.1);
   background:rgba(14,20,16,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
-.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
-  background:rgba(14,20,16,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+  box-shadow:0 1px 2px rgba(0,0,0,.35),0 10px 24px -18px rgba(0,0,0,.9);
+  transition:color .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+             background .2s cubic-bezier(.2,.7,.3,1),transform .2s cubic-bezier(.2,.7,.3,1),
+             box-shadow .2s cubic-bezier(.2,.7,.3,1)}
+.back{left:14px;text-decoration:none}
+.mute{right:14px;padding:0;margin:0;cursor:pointer}
+.back:hover,.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1);
+  transform:translateY(-1px);box-shadow:0 1px 2px rgba(0,0,0,.35),0 14px 26px -18px rgba(0,0,0,.9)}
+.back:active,.mute:active{transform:scale(.96)}
 .mute svg{width:16px;height:16px}
 .mute .m{display:block}.mute .x{display:none}
 .mute.off .m{display:none}.mute.off .x{display:block}
@@ -49,21 +50,25 @@ body{
 h1{margin:0;font-weight:300;font-size:clamp(26px,4.5vw,34px);letter-spacing:.14em;text-align:center}
 .sub{margin:10px 0 0;color:var(--mute);font-style:italic;font-size:14.5px;text-align:center;line-height:1.6}
 
-/* phase containers */
-.phase{opacity:0;pointer-events:none;transition:opacity .6s ease,transform .6s ease;
+/* phase containers — hidden phases are also inert (JS) and visibility-hidden,
+   so they never take Tab or appear in the accessibility tree while invisible */
+.phase{opacity:0;pointer-events:none;visibility:hidden;
+  transition:opacity .6s ease,transform .6s ease,visibility 0s linear .6s;
   position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding-top:34px}
-.phase.show{opacity:1;pointer-events:auto;position:relative}
+.phase.show{opacity:1;pointer-events:auto;visibility:visible;position:relative;
+  transition:opacity .6s ease,transform .6s ease,visibility 0s}
 
 /* ============ compose ============ */
 .compose{width:100%;display:flex;flex-direction:column;align-items:center;gap:14px}
 textarea{
   width:100%;
   min-height:110px;padding:16px 18px;resize:none;
-  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;
-  color:var(--ink);font:300 18px/1.65 inherit;outline:none;
-  transition:border-color .4s,box-shadow .4s;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:16px;
+  color:var(--ink);font:300 18px/1.65 inherit;
+  transition:border-color .3s,box-shadow .3s;
 }
 textarea::placeholder{color:var(--dim);font-style:italic}
+textarea:hover{border-color:rgba(255,255,255,.16)}
 textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(var(--accent),.06)}
 .begin{
   font:inherit;cursor:pointer;
@@ -71,9 +76,10 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   color:#e0f5ea;font-size:14.5px;letter-spacing:.08em;
   border:1px solid rgba(var(--accent),.45);
   background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.06));
-  transition:box-shadow .4s,border-color .4s,transform .2s,opacity .4s;
+  transition:box-shadow .22s cubic-bezier(.2,.7,.3,1),border-color .22s cubic-bezier(.2,.7,.3,1),
+             transform .2s cubic-bezier(.2,.7,.3,1),opacity .3s;
 }
-.begin:hover:not(:disabled){box-shadow:0 0 28px rgba(var(--accent),.35);border-color:rgba(var(--accent),.75)}
+.begin:hover:not(:disabled){box-shadow:0 0 28px rgba(var(--accent),.35);border-color:rgba(var(--accent),.75);transform:translateY(-1px)}
 .begin:active:not(:disabled){transform:scale(.98)}
 .begin:disabled{opacity:.35;cursor:default}
 
@@ -81,9 +87,10 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 .worry-display{
   width:100%;
   padding:26px 24px;
-  background:rgba(255,255,255,.025);
-  border:1px solid var(--line);
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.1);
   border-radius:18px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 22px 44px -34px rgba(0,0,0,.95);
   text-align:center;
   font-size:clamp(17px,2.6vw,20px);
   line-height:1.55;
@@ -121,26 +128,50 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   font:inherit;cursor:pointer;
   padding:10px 22px;border-radius:999px;
   color:var(--mute);font-size:14px;letter-spacing:.06em;
-  border:1px solid var(--line);
-  background:rgba(255,255,255,.02);
-  transition:all .28s ease;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.025);
+  transition:color .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+             background .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s cubic-bezier(.2,.7,.3,1),
+             transform .18s cubic-bezier(.2,.7,.3,1);
   min-width:88px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25);
 }
-.ans:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.08)}
-.ans.picked{
+.ans:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.08);transform:translateY(-1px)}
+.ans:active{transform:scale(.98)}
+.ans:disabled{cursor:default}
+.ans:disabled:not(.picked){opacity:.5}
+.ans[data-ans="yes"]:hover{color:#dff3e9;border-color:rgba(138,208,176,.6);background:rgba(138,208,176,.1)}
+.ans[data-ans="kind"]:hover{color:#f3e7cd;border-color:rgba(226,198,132,.55);background:rgba(226,198,132,.1)}
+.ans[data-ans="no"]:hover{color:#dde8f2;border-color:rgba(158,186,214,.55);background:rgba(158,186,214,.1)}
+.ans.picked,
+.ans.picked[data-ans="yes"]{
   color:#eaf7ee;
   border-color:rgba(var(--accent),.75);
   background:linear-gradient(rgba(var(--accent),.2),rgba(var(--accent),.08));
   box-shadow:0 0 22px rgba(var(--accent),.28);
+  transform:none;
+}
+.ans.picked[data-ans="kind"]{
+  color:#f7eed6;
+  border-color:rgba(226,198,132,.75);
+  background:linear-gradient(rgba(226,198,132,.2),rgba(226,198,132,.06));
+  box-shadow:0 0 22px rgba(226,198,132,.24);
+}
+.ans.picked[data-ans="no"]{
+  color:#e3ecf5;
+  border-color:rgba(158,186,214,.7);
+  background:linear-gradient(rgba(158,186,214,.2),rgba(158,186,214,.06));
+  box-shadow:0 0 22px rgba(158,186,214,.22);
 }
 
 /* ============ result ============ */
 .result{width:100%;display:flex;flex-direction:column;align-items:center;gap:16px}
 .chart-box{
   width:100%;
-  background:rgba(255,255,255,.025);
-  border:1px solid var(--line);
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.11);
   border-radius:18px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 22px 44px -34px rgba(0,0,0,.95);
   padding:20px 22px 14px;
 }
 #chart{display:block;width:100%;height:220px}
@@ -163,17 +194,22 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   font:inherit;cursor:pointer;
   padding:10px 24px;border-radius:999px;
   font-size:14px;letter-spacing:.06em;
-  transition:all .3s ease;
+  transition:color .2s cubic-bezier(.2,.7,.3,1),background .2s cubic-bezier(.2,.7,.3,1),
+             border-color .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s cubic-bezier(.2,.7,.3,1),
+             transform .18s cubic-bezier(.2,.7,.3,1);
 }
+.btn:active{transform:scale(.98)}
 .btn.primary{
   color:#eaf7ee;border:1px solid rgba(var(--accent),.55);
   background:linear-gradient(rgba(var(--accent),.2),rgba(var(--accent),.08));
+  box-shadow:0 1px 2px rgba(0,0,0,.3),0 10px 26px -18px rgba(0,0,0,.9);
 }
-.btn.primary:hover{box-shadow:0 0 26px rgba(var(--accent),.35);border-color:rgba(var(--accent),.85)}
+.btn.primary:hover{box-shadow:0 0 26px rgba(var(--accent),.35);border-color:rgba(var(--accent),.85);transform:translateY(-1px)}
+.btn.primary:active{transform:scale(.98)}
 .btn.ghost{
-  color:var(--mute);background:none;border:1px solid var(--line);
+  color:var(--mute);background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.12);
 }
-.btn.ghost:hover{color:var(--ink);border-color:rgba(var(--accent),.4)}
+.btn.ghost:hover{color:var(--ink);border-color:rgba(var(--accent),.4);background:rgba(255,255,255,.045);transform:translateY(-1px)}
 
 /* ============ check-in banner ============ */
 .banner{
@@ -181,6 +217,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   background:linear-gradient(rgba(var(--accent),.1),rgba(var(--accent),.03));
   border:1px solid rgba(var(--accent),.4);
   border-radius:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.3),0 18px 38px -30px rgba(0,0,0,.95);
   display:none;
   align-items:center;gap:12px;justify-content:space-between;
 }
@@ -193,9 +230,12 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   color:#eaf7ee;border:1px solid rgba(var(--accent),.55);
   background:rgba(var(--accent),.16);
   white-space:nowrap;
-  transition:background .3s,border-color .3s;
+  transition:background .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+             transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .2s cubic-bezier(.2,.7,.3,1);
 }
-.banner button:hover{background:rgba(var(--accent),.28);border-color:rgba(var(--accent),.85)}
+.banner button:hover{background:rgba(var(--accent),.28);border-color:rgba(var(--accent),.85);
+  box-shadow:0 0 18px rgba(var(--accent),.3);transform:translateY(-1px)}
+.banner button:active{transform:scale(.97)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
 /* ============ shelf ============ */
@@ -209,24 +249,35 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   color:var(--mute);font-weight:400;font-style:italic;
   display:flex;justify-content:space-between;align-items:baseline;
 }
-.shelf-title span{font-style:normal;letter-spacing:.04em;color:var(--dim);font-size:11.5px}
+.shelf-title span{font-style:normal;letter-spacing:.04em;color:var(--dim);font-size:11.5px;
+  font-variant-numeric:tabular-nums}
 .shelf-list{display:flex;flex-direction:column;gap:10px}
 .shelf-empty{
   padding:30px 20px;text-align:center;color:var(--dim);
   font-style:italic;font-size:14px;
 }
+/* shelf cards are real <button> elements so they are keyboard reachable */
 .card{
+  display:block;width:100%;margin:0;
+  font:inherit;color:inherit;text-align:left;
+  appearance:none;-webkit-appearance:none;
   padding:14px 16px;
-  background:rgba(255,255,255,.022);
-  border:1px solid var(--line);border-radius:12px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.1);border-radius:14px;
   cursor:pointer;
-  transition:background .3s,border-color .3s,transform .2s;
+  box-shadow:0 1px 2px rgba(0,0,0,.28),0 14px 30px -24px rgba(0,0,0,.9);
+  transition:background .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+             box-shadow .2s cubic-bezier(.2,.7,.3,1),transform .2s cubic-bezier(.2,.7,.3,1),
+             opacity .2s cubic-bezier(.2,.7,.3,1);
   position:relative;
 }
-.card:hover{background:rgba(255,255,255,.04);border-color:rgba(var(--accent),.35)}
+.card:hover{background:rgba(255,255,255,.05);border-color:rgba(var(--accent),.38);transform:translateY(-2px);
+  box-shadow:0 1px 2px rgba(0,0,0,.28),0 20px 34px -24px rgba(0,0,0,.9)}
+.card:active{transform:translateY(0) scale(.99)}
 .card.due{border-color:rgba(255,200,120,.55);
   background:linear-gradient(rgba(255,200,120,.06),rgba(255,200,120,.02));
   animation:cardGlow 3s ease-in-out infinite}
+.card.due:hover{border-color:rgba(255,200,120,.8)}
 @keyframes cardGlow{
   0%,100%{box-shadow:0 0 0 rgba(255,200,120,0)}
   50%{box-shadow:0 0 22px rgba(255,200,120,.28)}
@@ -240,6 +291,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 .card-meta{
   margin:0;font-size:11px;letter-spacing:.06em;color:var(--dim);
   font-style:italic;text-transform:uppercase;
+  font-variant-numeric:tabular-nums;
   display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
 }
 .card-meta em{color:var(--mute);font-style:italic;text-transform:none;letter-spacing:.02em;font-size:11.5px}
@@ -254,20 +306,28 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 .modal{
   position:fixed;inset:0;z-index:8;
   background:rgba(4,8,6,.9);backdrop-filter:blur(10px);
-  display:none;align-items:center;justify-content:center;padding:40px 20px;
+  display:flex;align-items:center;justify-content:center;padding:40px 20px;
+  opacity:0;visibility:hidden;
+  transition:opacity .2s ease,visibility 0s linear .2s;
 }
-.modal.show{display:flex;animation:fadeUp .35s ease}
+.modal.show{opacity:1;visibility:visible;transition:opacity .2s ease,visibility 0s}
 .modal-inner{
   max-width:520px;width:100%;
   background:rgba(18,24,20,.96);
-  border:1px solid rgba(var(--accent),.3);border-radius:18px;
+  border:1px solid rgba(255,255,255,.13);border-radius:20px;
+  box-shadow:0 1px 2px rgba(0,0,0,.5),0 24px 60px -30px rgba(0,0,0,1),
+             inset 0 1px 0 rgba(255,255,255,.05);
   padding:28px 26px 22px;position:relative;
+  opacity:0;transform:translateY(10px) scale(.97);
+  transition:opacity .2s ease,transform .2s cubic-bezier(.2,.7,.3,1);
 }
+.modal.show .modal-inner{opacity:1;transform:translateY(0) scale(1)}
 .modal h3{margin:0 0 4px;font-weight:400;font-size:19px;color:#eaf7ee}
-.modal .date{margin:0 0 18px;color:var(--dim);font-size:12px;letter-spacing:.08em;font-style:italic}
+.modal .date{margin:0 0 18px;color:var(--dim);font-size:12px;letter-spacing:.08em;font-style:italic;
+  font-variant-numeric:tabular-nums}
 .modal .prior{
   margin:0 0 14px;padding:14px 16px;border-radius:12px;
-  background:rgba(255,255,255,.03);border:1px solid var(--line);
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);
   font-size:15px;line-height:1.65;color:var(--ink);white-space:pre-wrap;
 }
 .modal .predline{
@@ -280,19 +340,36 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   font:inherit;cursor:pointer;
   padding:10px 20px;border-radius:999px;
   font-size:14px;letter-spacing:.06em;
-  color:var(--mute);border:1px solid var(--line);background:rgba(255,255,255,.02);
-  transition:all .28s;
+  color:var(--mute);border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);
+  transition:color .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+             background .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s cubic-bezier(.2,.7,.3,1),
+             transform .18s cubic-bezier(.2,.7,.3,1);
 }
-.modal .answers button:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.08)}
+.modal .answers button:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.09);transform:translateY(-1px)}
+.modal .answers button:active{transform:scale(.98)}
+.modal .answers button[data-out="yes"]:hover{border-color:rgba(138,208,176,.6);background:rgba(138,208,176,.1);color:#dff3e9}
+.modal .answers button[data-out="kind"]:hover{border-color:rgba(226,198,132,.55);background:rgba(226,198,132,.1);color:#f3e7cd}
+.modal .answers button[data-out="no"]:hover{border-color:rgba(158,186,214,.55);background:rgba(158,186,214,.1);color:#dde8f2}
 .modal .close{
   position:absolute;top:10px;right:12px;width:30px;height:30px;border-radius:999px;
-  display:grid;place-items:center;background:none;border:1px solid var(--line);
+  display:grid;place-items:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12);
   color:var(--mute);cursor:pointer;font-size:17px;line-height:1;padding:0;
-  transition:color .3s,border-color .3s;
+  transition:color .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+             background .2s cubic-bezier(.2,.7,.3,1),transform .18s cubic-bezier(.2,.7,.3,1);
 }
-.modal .close:hover{color:var(--ink);border-color:rgba(var(--accent),.5)}
+.modal .close:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.modal .close:active{transform:scale(.94)}
 
-@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;animation:none!important}}
+/* ============ shared a11y helpers ============ */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+a:focus-visible,button:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid rgba(var(--accent),.85);outline-offset:3px;
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01s!important;transition-delay:0s!important;animation:none!important}
+}
 </style>
 </head>
 <body>
@@ -313,10 +390,13 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     <h1>Will This Matter?</h1>
     <p class="sub">Predict how your worry will age. Then, when the date arrives, find out if you were right.</p>
 
-    <div class="banner" id="banner">
+    <div class="banner" id="banner" role="status" aria-live="polite">
       <p id="bannerText"></p>
-      <button id="bannerGo">Look at it</button>
+      <button id="bannerGo" type="button">Look at it</button>
     </div>
+
+    <!-- polite status region for phase / question changes -->
+    <div class="sr-only" id="srStatus" role="status" aria-live="polite"></div>
 
     <!-- Phase 1: compose -->
     <div class="phase show" id="phaseCompose">
@@ -332,7 +412,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     </div>
 
     <!-- Phase 2: predictions -->
-    <div class="phase" id="phasePredict">
+    <div class="phase" id="phasePredict" inert>
       <div class="worry-display" id="worryDisplay"></div>
       <div class="q-block" id="qBlock">
         <p class="q-text" id="qText"></p>
@@ -346,7 +426,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     </div>
 
     <!-- Phase 3: result -->
-    <div class="phase" id="phaseResult">
+    <div class="phase" id="phaseResult" inert>
       <div class="result">
         <div class="chart-box">
           <canvas id="chart"></canvas>
@@ -355,7 +435,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
             <span><span class="dot typical"></span>most people</span>
           </div>
         </div>
-        <p class="verdict" id="verdict"></p>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
         <div class="actions">
           <button class="btn primary" id="saveBtn">Keep this prediction</button>
           <button class="btn ghost" id="againBtn">Start over</button>
@@ -366,17 +446,17 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 </div>
 
 <div class="modal" id="modal">
-  <div class="modal-inner">
-    <button class="close" id="modalClose" aria-label="Close">×</button>
+  <div class="modal-inner" role="dialog" aria-modal="true" aria-labelledby="mTitle" aria-describedby="mPrior" tabindex="-1">
+    <button class="close" id="modalClose" type="button" aria-label="Close">×</button>
     <h3 id="mTitle"></h3>
     <p class="date" id="mDate"></p>
     <p class="prior" id="mPrior"></p>
     <p class="predline" id="mPred"></p>
     <p class="q" id="mQ">And today — does it still matter?</p>
     <div class="answers">
-      <button data-out="yes">Yes, still</button>
-      <button data-out="kind">Kind of</button>
-      <button data-out="no">Not anymore</button>
+      <button type="button" data-out="yes">Yes, still</button>
+      <button type="button" data-out="kind">Kind of</button>
+      <button type="button" data-out="no">Not anymore</button>
     </div>
   </div>
 </div>
@@ -393,14 +473,29 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   const saveBtn = $('#saveBtn'), againBtn = $('#againBtn');
   const shelfList = $('#shelfList'), shelfStats = $('#shelfStats');
   const banner = $('#banner'), bannerText = $('#bannerText'), bannerGo = $('#bannerGo');
-  const modal = $('#modal'), modalClose = $('#modalClose');
+  const modal = $('#modal'), modalClose = $('#modalClose'), modalInner = document.querySelector('.modal-inner');
+  const backLink = document.querySelector('.back');
   const mTitle = $('#mTitle'), mDate = $('#mDate'), mPrior = $('#mPrior'), mPred = $('#mPred'), mQ = $('#mQ');
   const muteBtn = $('#mute');
+  const srStatus = $('#srStatus');
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // concise, polite announcements (question / phase changes, newly-due check-ins)
+  let announceToken = 0;
+  function announce(msg){
+    if (!srStatus) return;
+    const token = ++announceToken;
+    srStatus.textContent = '';
+    // clear-then-set so repeated identical text is still announced
+    setTimeout(() => { if (token === announceToken) srStatus.textContent = msg; }, 60);
+  }
 
   /* ==================== audio ==================== */
   let AC = null, master = null, reverbIn = null, noiseBuffer = null;
   let muted = false;
+  // A check-in that became due before any user gesture: the AudioContext may not
+  // exist yet, so we record it and chime on the first gesture instead of at boot.
+  let pendingBell = false;
   try { muted = localStorage.getItem('wtm:muted') === '1'; } catch(e){}
 
   function makeImpulse(c, dur, decay){
@@ -503,7 +598,8 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   }
 
   function playBell(){
-    if (!ensureAudio() || muted) return;
+    if (!AC || muted) return;   // never *create* a context here — see ringPendingBell()
+    if (AC.state !== 'running') AC.resume().catch(()=>{});
     const t = AC.currentTime;
     [659.25, 987.77, 1318.5].forEach((f, i) => {
       const start = t + i * .15;
@@ -519,16 +615,35 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     });
   }
 
+  /* --- deferred bell: safe to call from anywhere ------------------------- */
+  // From a timer: rings only if the context already exists (never creates one).
+  function ringBellIfReady(){
+    if (!pendingBell || muted || !AC) return;
+    pendingBell = false;
+    playBell();
+  }
+  // From a user gesture: safe to create + resume the context, then ring.
+  function ringPendingBell(){
+    if (!pendingBell || muted) return;
+    if (ensureAudio()){ pendingBell = false; playBell(); }
+  }
+  // The AudioContext is only ever created from these gesture handlers (or from
+  // other explicit click/keydown handlers below) — never from boot or timers.
+  function firstGesture(){ ringPendingBell(); }
+  addEventListener('pointerdown', firstGesture, { passive: true });
+  addEventListener('keydown', firstGesture);
+
   const paintMute = () => {
     muteBtn.classList.toggle('off', muted);
     muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
   };
   muteBtn.addEventListener('click', () => {
     muted = !muted;
     try { localStorage.setItem('wtm:muted', muted ? '1' : '0'); } catch(e){}
     if (ensureAudio()) master.gain.setTargetAtTime(muted ? 0 : .55, AC.currentTime, .06);
     paintMute();
+    if (!muted) ringPendingBell();   // a check-in waiting to chime
   });
 
   /* ==================== state ==================== */
@@ -544,26 +659,46 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   let worries = [];   // { id, text, at, answers: [{hIdx, ans}], checkAt, checked, outcome }
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (Array.isArray(raw)) worries = raw.filter(w => w && typeof w.text === 'string' && Array.isArray(w.answers));
+    if (Array.isArray(raw)) worries = raw
+      .filter(w => w && typeof w.text === 'string' && Array.isArray(w.answers))
+      // repair/drop malformed answer entries so a corrupt save can't crash the shelf/modal
+      .map(w => Object.assign({}, w, {
+        answers: w.answers.filter(a =>
+          a && typeof a === 'object' &&
+          Number.isInteger(a.hIdx) && a.hIdx >= 0 && a.hIdx < HORIZONS.length &&
+          (a.ans === 'yes' || a.ans === 'kind' || a.ans === 'no'))
+      }));
   } catch(e){}
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(worries)); } catch(e){} };
 
   let current = null;  // { text, answers: [] }
   let qi = 0;          // which question index we're on (0..3)
+  let transitioning = false;  // guards against double-clicks skipping a horizon
+  let lastDueCount = 0;       // last due-total rendered on the shelf
+  let shelfDirty = false;     // due set changed while the modal was open
 
   /* ==================== phase switching ==================== */
   function showPhase(name){
     phaseCompose.classList.toggle('show', name === 'compose');
     phasePredict.classList.toggle('show', name === 'predict');
     phaseResult.classList.toggle('show', name === 'result');
-    page.scrollTo({ top: 0, behavior: 'smooth' });
+    // hidden phases are removed from the tab order + a11y tree
+    [phaseCompose, phasePredict, phaseResult].forEach(p => {
+      if (p.classList.contains('show')) p.removeAttribute('inert');
+      else p.setAttribute('inert', '');
+    });
+    page.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
+    if (name === 'compose') announce('Ready to write a new prediction.');
+    else if (name === 'result') announce('Your prediction is ready to review.');
   }
 
   /* ==================== Q&A ==================== */
   function askQuestion(){
+    releaseAnswers();                    // re-enable the answers for the new question
     if (qi >= HORIZONS.length){ showResult(); return; }
     const h = HORIZONS[qi];
     qText.textContent = `In ${h.label}, will this still matter to you?`;
+    announce(`Question ${qi + 1} of ${HORIZONS.length}. ${qText.textContent}`);
     qBlock.classList.remove('on');
     void qBlock.offsetWidth;
     requestAnimationFrame(() => qBlock.classList.add('on'));
@@ -585,9 +720,16 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     worryDisplay.style.transform = `translateY(${m.y}px)`;
   }
 
+  function releaseAnswers(){
+    transitioning = false;
+    ansBtns.forEach(b => { b.disabled = false; });
+  }
+
   ansBtns.forEach(b => {
     b.addEventListener('click', () => {
-      if (!current) return;
+      if (!current || transitioning) return;
+      transitioning = true;                       // no double-click can skip a horizon
+      ansBtns.forEach(x => { x.disabled = true; });
       const ans = b.dataset.ans;
       b.classList.add('picked');
       current.answers[qi] = ans;
@@ -596,6 +738,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
       const delay = calm ? 80 : 380;
       setTimeout(() => {
         qi++;
+        releaseAnswers();
         askQuestion();
       }, delay);
     });
@@ -604,7 +747,8 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   function startPredictions(){
     const t = worryText.value.trim();
     if (!t) return;
-    ensureAudio();
+    ensureAudio();                                 // called from a click / Ctrl+Enter
+    releaseAnswers();
     current = { text: t, answers: [] };
     qi = 0;
     worryDisplay.textContent = t;
@@ -679,7 +823,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     ctx.clearRect(0, 0, w, h);
 
     // grid lines
-    ctx.strokeStyle = 'rgba(180,220,200,.09)';
+    ctx.strokeStyle = 'rgba(180,220,200,.12)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i++){
       const y = padT + (plotH * i / 4);
@@ -690,7 +834,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     }
 
     // y-axis labels
-    ctx.fillStyle = 'rgba(140,160,150,.55)';
+    ctx.fillStyle = 'rgba(174,194,184,.8)';
     ctx.font = '10px -apple-system,"Iowan Old Style",Georgia,serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -700,14 +844,14 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
     // x-axis horizon labels
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(140,160,150,.7)';
+    ctx.fillStyle = 'rgba(174,194,184,.85)';
     HORIZONS.forEach((hz, i) => {
       const x = padL + plotW * (i / (HORIZONS.length - 1));
       ctx.fillText(hz.short, x, padT + plotH + 12);
     });
 
     // typical curve (dashed)
-    ctx.strokeStyle = 'rgba(180,220,200,.32)';
+    ctx.strokeStyle = 'rgba(180,220,200,.42)';
     ctx.lineWidth = 1.4;
     ctx.setLineDash([4, 5]);
     ctx.beginPath();
@@ -835,6 +979,8 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 
   function renderShelf(){
     shelfList.innerHTML = '';
+    // shelf badges track the live due set (re-rendered by checkForDue when it changes)
+    lastDueCount = worries.filter(w => !w.checked && Date.now() >= w.checkAt).length;
     if (!worries.length){
       shelfList.innerHTML = '<p class="shelf-empty">Nothing predicted yet.<br>Write something above to start.</p>';
       shelfStats.textContent = '';
@@ -846,7 +992,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
       let correct = 0;
       resolved.forEach(w => {
         // what did they say about the horizon the check-in was for?
-        const predAtCheck = w.answers.find(a => HORIZONS[a.hIdx].label === w.checkLabel);
+        const predAtCheck = w.answers.find(a => HORIZONS[a.hIdx] && HORIZONS[a.hIdx].label === w.checkLabel);
         const predicted = predAtCheck ? predAtCheck.ans : 'kind';
         const actuallyMattered = w.outcome === 'yes' ? 1 : w.outcome === 'kind' ? .5 : 0;
         const predictedMattered = predicted === 'yes' ? 1 : predicted === 'kind' ? .5 : 0;
@@ -860,22 +1006,27 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 
     worries.slice().sort((a,b) => a.at - b.at).reverse().forEach(w => {
       const due = !w.checked && Date.now() >= w.checkAt;
-      const card = document.createElement('div');
+      // real <button> so every card (including due check-ins) is keyboard reachable
+      const card = document.createElement('button');
+      card.type = 'button';
       card.className = 'card' + (due ? ' due' : '') + (w.checked ? ' resolved' : '');
+      if (w.id) card.dataset.id = w.id;
       // meta line
-      let meta = `${fmtShort(w.at)} · check on ${w.checkLabel}`;
+      const label = escapeHtml(w.checkLabel || '');
+      let meta = `${fmtShort(w.at)} · check on ${label}`;
       if (w.checked && w.outcome){
         const word = w.outcome === 'yes' ? 'still mattered' : w.outcome === 'kind' ? 'partly' : 'didn\'t matter';
         meta = `${fmtShort(w.at)} · ${word}`;
       }
       card.innerHTML = `
-        <p class="card-text">${escapeHtml(w.text)}</p>
-        <p class="card-meta">
+        <span class="card-text">${escapeHtml(w.text)}</span>
+        <span class="card-meta">
           <span>${meta}${due ? '<span class="card-badge">due</span>' : ''}</span>
-        </p>`;
+        </span>
+        <span class="sr-only">${due ? ' — check in now' : ' — open prediction'}</span>`;
       card.addEventListener('click', () => {
-        if (due) openModal(w);
-        else viewOnly(w);
+        if (due) openModal(w, card);
+        else viewOnly(w, card);
       });
       shelfList.appendChild(card);
     });
@@ -886,50 +1037,85 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   }
 
   /* ==================== modal ==================== */
-  let modalWorry = null;
-  function openModal(w){
+  let modalWorry = null, modalWorryId = null, modalReturnFocus = null;
+
+  // background (page + back/mute) is inert while the dialog is open
+  function setBackgroundInert(on){
+    [page, backLink, muteBtn].forEach(el => {
+      if (!el) return;
+      if (on) el.setAttribute('inert', ''); else el.removeAttribute('inert');
+    });
+  }
+
+  function showDialog(trigger){
+    modalReturnFocus = (trigger && trigger !== document.body) ? trigger : document.activeElement;
+    modal.classList.add('show');
+    setBackgroundInert(true);
+    // move focus into the dialog so it is the first thing announced
+    requestAnimationFrame(() => { try { modalInner.focus({ preventScroll: true }); } catch(e){} });
+  }
+
+  function closeModal(){
+    if (!modal.classList.contains('show')) return;
+    const trigger = modalReturnFocus, id = modalWorryId;
+    modalReturnFocus = null; modalWorryId = null; modalWorry = null;
+    modal.classList.remove('show');
+    modal.querySelector('.answers').style.display = '';
+    setBackgroundInert(false);
+    if (shelfDirty){ shelfDirty = false; renderShelf(); }
+    // restore focus to whatever opened the dialog (falling back to its re-rendered card)
+    let target = (trigger && trigger !== document.body && document.contains(trigger)) ? trigger : null;
+    if (!target && id){
+      try { target = shelfList.querySelector('[data-id="' + CSS.escape(String(id)) + '"]'); } catch(e){}
+    }
+    if (!target || target.offsetParent === null) target = worryText;   // trigger got hidden
+    if (target) { try { target.focus({ preventScroll: true }); } catch(e){} }
+  }
+
+  function openModal(w, trigger){
     modalWorry = w;
+    modalWorryId = w.id || null;
     mTitle.textContent = 'A worry from before';
     mDate.textContent = `You wrote this ${fmtShort(w.at)}`;
     mPrior.textContent = w.text;
-    const predAtCheck = w.answers.find(a => HORIZONS[a.hIdx].label === w.checkLabel);
+    const predAtCheck = w.answers.find(a => HORIZONS[a.hIdx] && HORIZONS[a.hIdx].label === w.checkLabel);
     const predWord = predAtCheck ? (predAtCheck.ans === 'yes' ? 'would still matter' : predAtCheck.ans === 'kind' ? 'would partly matter' : 'wouldn\'t matter') : 'would matter';
-    mPred.innerHTML = `You predicted this <b>${predWord}</b> by ${w.checkLabel}.`;
+    mPred.innerHTML = `You predicted this <b>${predWord}</b> by ${escapeHtml(w.checkLabel || '')}.`;
     mQ.textContent = 'And today — does it still matter?';
     modal.querySelectorAll('.answers button').forEach(b => b.classList.remove('picked'));
-    modal.classList.add('show');
+    showDialog(trigger);
   }
 
-  function viewOnly(w){
+  function viewOnly(w, trigger){
     modalWorry = w;
+    modalWorryId = w.id || null;
     mTitle.textContent = w.checked ? 'Your prediction, resolved' : 'Your prediction';
     mDate.textContent = `You wrote this ${fmtShort(w.at)}`;
     mPrior.textContent = w.text;
-    const predAtCheck = w.answers.find(a => HORIZONS[a.hIdx].label === w.checkLabel);
+    const predAtCheck = w.answers.find(a => HORIZONS[a.hIdx] && HORIZONS[a.hIdx].label === w.checkLabel);
     const predWord = predAtCheck ? (predAtCheck.ans === 'yes' ? 'still matter' : predAtCheck.ans === 'kind' ? 'partly matter' : 'not matter') : 'matter';
+    const label = escapeHtml(w.checkLabel || '');
     if (w.checked){
       const outWord = w.outcome === 'yes' ? 'it still mattered' : w.outcome === 'kind' ? 'it partly mattered' : 'it didn\'t matter';
-      mPred.innerHTML = `You predicted this would <b>${predWord}</b> by ${w.checkLabel}. When we checked, <b>${outWord}</b>.`;
+      mPred.innerHTML = `You predicted this would <b>${predWord}</b> by ${label}. When we checked, <b>${outWord}</b>.`;
       mQ.textContent = '';
       modal.querySelector('.answers').style.display = 'none';
     } else {
-      mPred.innerHTML = `You predicted this would <b>${predWord}</b> by ${w.checkLabel}.`;
+      mPred.innerHTML = `You predicted this would <b>${predWord}</b> by ${label}.`;
       mQ.textContent = `Check back on ${new Date(w.checkAt).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})}.`;
       modal.querySelector('.answers').style.display = 'none';
     }
-    modal.classList.add('show');
+    showDialog(trigger);
   }
 
-  modalClose.addEventListener('click', () => {
-    modal.classList.remove('show');
-    modal.querySelector('.answers').style.display = '';
-    modalWorry = null;
-  });
+  modalClose.addEventListener('click', closeModal);
   modal.addEventListener('click', e => {
-    if (e.target === modal){
-      modal.classList.remove('show');
-      modal.querySelector('.answers').style.display = '';
-      modalWorry = null;
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.classList.contains('show')){
+      e.preventDefault();
+      closeModal();
     }
   });
   modal.querySelectorAll('.answers button').forEach(b => {
@@ -940,10 +1126,8 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
       modalWorry.checkedAt = Date.now();
       save();
       playSave();
-      modal.classList.remove('show');
-      modal.querySelector('.answers').style.display = '';
-      modalWorry = null;
-      renderShelf();
+      renderShelf();          // re-render first so focus can land on the fresh card
+      closeModal();
       checkForDue();
     });
   });
@@ -951,21 +1135,35 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   /* ==================== banner for due worries ==================== */
   function checkForDue(){
     const due = worries.filter(w => !w.checked && Date.now() >= w.checkAt);
+    // re-render the shelf when the due set changed while the page was open
+    if (due.length !== lastDueCount){
+      if (modal.classList.contains('show')) shelfDirty = true;
+      else renderShelf();
+    }
     if (due.length){
       banner.classList.add('show');
-      bannerText.textContent = due.length === 1
+      const text = due.length === 1
         ? 'One prediction is ready to look at.'
         : `${due.length} predictions are ready to look at.`;
+      bannerText.textContent = text;
       bannerGo.onclick = () => {
-        if (due[0]) openModal(due[0]);
+        ringPendingBell();   // gesture: safe to create the context here
+        const first = worries.filter(w => !w.checked && Date.now() >= w.checkAt)[0];
+        if (first) openModal(first, bannerGo);
       };
       if (banner.dataset.announced !== String(due.length)){
         banner.dataset.announced = String(due.length);
-        playBell();
+        announce(text);
+        // NB: this runs at boot and from a 60s timer — never create/resume an
+        // AudioContext here. Chime now only if one already exists, otherwise
+        // remember it and chime on the first user gesture.
+        pendingBell = true;
+        ringBellIfReady();
       }
     } else {
       banner.classList.remove('show');
       banner.dataset.announced = '';
+      pendingBell = false;
     }
   }
 

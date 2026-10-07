@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Scream Into the Void</title>
-<meta name="description" content="Hold. Let it build. Release. Nothing is stored.">
+<meta name="description" content="Hold. Let it build. Release. Only your mute preference is stored.">
 <meta name="theme-color" content="#04060c">
 <style>
 :root{--ink:#dce8ff;--mute:#7688b0;--dim:#4a5a78;--line:rgba(140,200,255,.16)}
@@ -16,31 +16,83 @@ body{background:#04060c;color:var(--ink);
   touch-action:none}
 #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
   touch-action:none;cursor:pointer}
-.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+/* icon buttons: back (top-left) + mute (top-right), identical 40px discs */
+.back,.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:5;
+  width:40px;height:40px;display:grid;place-items:center;border-radius:999px;
   color:var(--mute);text-decoration:none;border:1px solid var(--line);
-  background:rgba(10,12,24,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.back:hover{color:var(--ink);border-color:rgba(100,220,255,.5);background:rgba(100,220,255,.1)}
-.hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 40px);
-  transform:translateX(-50%);
-  color:var(--dim);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  background:rgba(10,12,24,.55);backdrop-filter:blur(8px);cursor:pointer;padding:0;
+  transition:color .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+    background .2s cubic-bezier(.2,.7,.3,1),transform .18s cubic-bezier(.2,.7,.3,1)}
+.back{left:14px}
+.mute{right:14px}
+.back:hover,.mute:hover{color:var(--ink);border-color:rgba(100,220,255,.5);
+  background:rgba(100,220,255,.1)}
+.back:active,.mute:active{transform:scale(.94)}
+/* mute icon: waves when on, cross when muted */
+.mute .slash{display:none}
+.mute[aria-pressed="true"] .slash{display:block}
+.mute[aria-pressed="true"] .wave{display:none}
+
+/* bottom dock: hold button + hint, centered */
+.dock{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);
+  transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;
+  align-items:center;gap:16px;pointer-events:none}
+.hold{--chg:0;pointer-events:auto;
+  font-family:inherit;font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink);padding:13px 30px;border-radius:999px;
+  border:1px solid rgba(140,200,255,.26);
+  background:rgba(12,18,34,.6);backdrop-filter:blur(8px);cursor:pointer;
+  box-shadow:0 0 calc(10px + 34px*var(--chg)) rgba(120,215,255,calc(.1 + .45*var(--chg)));
+  transition:box-shadow .2s cubic-bezier(.2,.7,.3,1),
+    color .2s cubic-bezier(.2,.7,.3,1),border-color .2s cubic-bezier(.2,.7,.3,1),
+    background .2s cubic-bezier(.2,.7,.3,1),transform .18s cubic-bezier(.2,.7,.3,1)}
+.hold:hover{color:#eaf4ff;border-color:rgba(120,220,255,.55);background:rgba(100,220,255,.1)}
+.hold:active,.hold.held{transform:scale(.97)}
+.hold.held{border-color:rgba(160,235,255,.8);background:rgba(100,220,255,.16)}
+
+.hint{color:var(--dim);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
   font-style:italic;pointer-events:none;transition:opacity .6s ease;
-  text-align:center;line-height:1.9;padding:0 20px;max-width:90vw}
+  text-align:center;line-height:1.9;padding:0 20px;max-width:90vw;margin:0}
 .hint.gone{opacity:0}
+
+/* visually hidden live region for charge/release/mute announcements */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);
+  white-space:nowrap}
+
+/* one consistent visible focus ring for every focusable */
+a:focus-visible,button:focus-visible{outline:2px solid rgba(120,220,255,.9);
+  outline-offset:3px}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
 </style>
 </head>
 <body>
 <canvas id="c" aria-hidden="true"></canvas>
-<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
-<p class="hint" id="hint">Hold anywhere. Let it build. Release.</p>
+<a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+<button class="mute" id="mute" type="button" aria-pressed="false" aria-label="Mute sound"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="wave" d="M18.3 6.6a8 8 0 0 1 0 10.8"/><path class="slash" d="M16.2 9.4l5.2 5.2M21.4 9.4l-5.2 5.2"/></svg></button>
+<div class="dock">
+  <button class="hold" id="hold" type="button" aria-label="Hold to charge a scream, release to burst">Hold to scream</button>
+  <p class="hint" id="hint">Hold anywhere. Let it build. Release.</p>
+</div>
+<div class="sr" id="status" role="status" aria-live="polite"></div>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
   const cv = $('#c'), ctx = cv.getContext('2d');
   const hint = $('#hint');
-  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const holdBtn = $('#hold'), muteBtn = $('#mute'), statusEl = $('#status');
+
+  /* --- reduced motion: reactive, so an OS-level toggle mid-session applies */
+  const motionMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  let calm = motionMQ.matches;
+  const onMotionChange = e => {
+    calm = e.matches;
+    if (calm) shake = 0;
+    syncDust();
+  };
+  if (motionMQ.addEventListener) motionMQ.addEventListener('change', onMotionChange);
+  else if (motionMQ.addListener) motionMQ.addListener(onMotionChange);
+
+  function announce(msg){ statusEl.textContent = msg; }
 
   /* ==================== canvas ==================== */
   let W = 0, H = 0, dpr = 1;
@@ -73,16 +125,39 @@ body{background:#04060c;color:var(--ink);
   }
   function rgba(c, a){ return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
 
-  /* ==================== audio ==================== */
+  /* ==================== audio ====================
+     Gesture-gated: the AudioContext is only ever built from a hold-start.
+     `muted` is read from storage at boot but touches no audio until then. */
   let AC = null, master = null;
   let chargeNodes = null;
+
+  // the ONE thing this room stores: the mute preference
+  let muted = false;
+  try { muted = localStorage.getItem('scream:muted') === '1'; } catch(_){}
+
+  function applyMasterGain(){
+    if (!master || !AC) return;
+    master.gain.setTargetAtTime(muted ? 0 : .55, AC.currentTime, .04);
+  }
+  function setMute(v){
+    muted = !!v;
+    try { localStorage.setItem('scream:muted', muted ? '1' : '0'); } catch(_){}
+    muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
+    applyMasterGain();                 // silences drone + blast + crackle at once
+    announce(muted ? 'Sound muted' : 'Sound on');
+  }
+  // reflect stored state without creating any audio
+  muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+  muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
+
   function ensureAudio(){
     if (!AC){
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return false;
       try { AC = new Ctx(); } catch(e){ return false; }
       master = AC.createGain();
-      master.gain.value = .55;
+      master.gain.value = muted ? 0 : .55;
       master.connect(AC.destination);
     }
     if (AC.state !== 'running') AC.resume().catch(()=>{});
@@ -90,7 +165,7 @@ body{background:#04060c;color:var(--ink);
   }
 
   function startChargeSound(){
-    if (!ensureAudio() || chargeNodes) return;
+    if (muted || !ensureAudio() || chargeNodes) return;
     const t = AC.currentTime;
     const g = AC.createGain(); g.gain.value = 0;
 
@@ -123,7 +198,7 @@ body{background:#04060c;color:var(--ink);
   }
 
   function updateChargeSound(charge){
-    if (!chargeNodes || !AC) return;
+    if (muted || !chargeNodes || !AC) return;
     const t = AC.currentTime;
     const g = chargeNodes.g.gain;
     // volume rises with charge
@@ -140,6 +215,7 @@ body{background:#04060c;color:var(--ink);
   }
 
   function stopChargeSound(){
+    // never gated on `muted`: cleanup must always run so no drone is orphaned
     if (!chargeNodes || !AC) return;
     const n = chargeNodes;
     const t = AC.currentTime;
@@ -151,6 +227,7 @@ body{background:#04060c;color:var(--ink);
   }
 
   function playBlastSound(charge){
+    if (muted) return;
     if (!ensureAudio()) return;
     const t = AC.currentTime;
     // Bass drop
@@ -213,17 +290,26 @@ body{background:#04060c;color:var(--ink);
   let shake = 0;
   let lastPetalSpawn = 0;
   let activePointerId = null;
+  let burstCharge = null;      // release charge recorded for triggerBurst()
+  let keyHeld = null;          // e.code of the key holding the button, or null
+  let lastGlow = -1;           // last --chg value written to the hold button
 
   // ambient drifting dust so the empty page is not blank
-  for (let i = 0; i < (calm ? 25 : 60); i++){
-    dust.push({
+  function makeDust(){
+    return {
       x: Math.random(), y: Math.random(),
       vx: (Math.random() - .5) * .00006,
       vy: (Math.random() - .5) * .00006,
       r: .5 + Math.random() * 1.3,
       ph: Math.random() * 6.28
-    });
+    };
   }
+  function syncDust(){
+    const want = calm ? 25 : 60;
+    while (dust.length > want) dust.pop();
+    while (dust.length < want) dust.push(makeDust());
+  }
+  syncDust();
 
   /* ==================== petals ====================
      Each petal is a growing curved streak from the seed. Points append at the
@@ -314,7 +400,8 @@ body{background:#04060c;color:var(--ink);
 
   /* ==================== particles ==================== */
   function spawnBurst(chargeAtRelease){
-    const count = Math.round(160 + 340 * chargeAtRelease);
+    // reduced motion: same feel, far fewer projectiles
+    const count = Math.round((160 + 340 * chargeAtRelease) * (calm ? .3 : 1));
     for (let i = 0; i < count; i++){
       const a = Math.random() * Math.PI * 2;
       const baseSpeed = 2 + Math.random() * 6 + chargeAtRelease * 14;
@@ -361,6 +448,7 @@ body{background:#04060c;color:var(--ink);
     shockwaves = [];
     flash = 0;
     shake = 0;
+    announce('Charging');
   }
   function onHoldMove(x, y){
     targetX = x; targetY = y;
@@ -374,19 +462,23 @@ body{background:#04060c;color:var(--ink);
     playBlastSound(finalCharge);
     phase = 'shatter';
     phaseStarted = performance.now();
-    // pre-schedule the burst effects
-    const willBurst = finalCharge;
-    // put the eventual burst values on the petal state so we don't lose them
-    petals._burstCharge = willBurst;
+    // record the release charge for triggerBurst(). Module-level on purpose:
+    // `stepPetals()` reassigns `petals` every frame, so a property set on the
+    // array would be dropped before the burst reads it.
+    burstCharge = finalCharge;
   }
   function triggerBurst(){
-    const c = petals._burstCharge || charge;
+    const c = burstCharge !== null ? burstCharge : charge;
+    burstCharge = null;
     spawnBurst(c);
     spawnShockwave(0, Math.min(W, H) * .95, 3 + c * 5, [220, 240, 255], .9);
     spawnShockwave(60, Math.min(W, H) * 1.15, 2 + c * 3, [160, 210, 255], .6);
     spawnShockwave(140, Math.min(W, H) * .7, 1.5 + c * 2, [255, 220, 180], .75);
-    flash = .55 + .35 * c;
-    shake = 6 + 20 * c;
+    // reduced motion: no screen shake, and only a soft local glow instead of
+    // a full-screen white sheet
+    flash = calm ? Math.min(.34, .18 + .18 * c) : .55 + .35 * c;
+    shake = calm ? 0 : 6 + 20 * c;
+    announce('Released');
     phase = 'burst';
     phaseStarted = performance.now();
   }
@@ -421,9 +513,76 @@ body{background:#04060c;color:var(--ink);
   addEventListener('blur', () => {
     if (activePointerId !== null){
       activePointerId = null;
+      holdBtn.classList.remove('held');
       onHoldEnd();
     }
+    endKeyHold();
   });
+
+  /* ==================== hold button ====================
+     Same press-and-hold machine as the canvas, reachable by pointer AND by
+     keyboard (Space/Enter). `activePointerId` is shared with the canvas, so
+     multi-touch rejection works across both surfaces. */
+  function endKeyHold(){
+    if (keyHeld === null) return;
+    keyHeld = null;
+    holdBtn.classList.remove('held');
+    onHoldEnd();
+  }
+
+  holdBtn.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (keyHeld !== null || activePointerId !== null) return;
+    activePointerId = e.pointerId;
+    try { holdBtn.setPointerCapture(e.pointerId); } catch(_){}
+    const r = holdBtn.getBoundingClientRect();
+    onHoldStart(r.left + r.width / 2, r.top + r.height / 2);
+    holdBtn.classList.add('held');
+  });
+
+  holdBtn.addEventListener('pointermove', e => {
+    if (e.pointerId !== activePointerId) return;
+    onHoldMove(e.clientX, e.clientY);
+  });
+
+  holdBtn.addEventListener('pointerup', e => {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    try { holdBtn.releasePointerCapture(e.pointerId); } catch(_){}
+    holdBtn.classList.remove('held');
+    onHoldEnd();
+  });
+
+  holdBtn.addEventListener('pointercancel', e => {
+    if (e.pointerId !== activePointerId) return;
+    activePointerId = null;
+    holdBtn.classList.remove('held');
+    onHoldEnd();
+  });
+
+  holdBtn.addEventListener('keydown', e => {
+    if (e.code !== 'Space' && e.code !== 'Enter' && e.code !== 'NumpadEnter') return;
+    e.preventDefault();                  // no synthetic click, no scroll
+    if (e.repeat) return;                // key auto-repeat is not a new hold
+    if (keyHeld !== null || activePointerId !== null) return;
+    keyHeld = e.code;
+    holdBtn.classList.add('held');
+    const r = holdBtn.getBoundingClientRect();
+    onHoldStart(r.left + r.width / 2, r.top + r.height / 2);
+  });
+
+  holdBtn.addEventListener('keyup', e => {
+    if (keyHeld === null || e.code !== keyHeld) return;
+    e.preventDefault();
+    endKeyHold();                        // release → shatter → burst, once
+  });
+
+  // focus leaving the button mid-hold still releases safely (no orphaned drone)
+  holdBtn.addEventListener('blur', endKeyHold);
+
+  /* ==================== mute ====================
+     Click only — the AudioContext itself stays gesture-gated to hold-start. */
+  muteBtn.addEventListener('click', () => setMute(!muted));
 
   /* ==================== update ==================== */
   function update(dt){
@@ -482,6 +641,14 @@ body{background:#04060c;color:var(--ink);
     flash *= Math.pow(.88, dt);
     shake *= Math.pow(.9, dt);
     if (shake < .2) shake = 0;
+    if (calm) shake = 0;                 // reduced motion: never keep a shake
+
+    // drive the hold button's charge glow (written only on meaningful change)
+    const glow = (phase === 'charging' || phase === 'shatter') ? charge : 0;
+    if (Math.abs(glow - lastGlow) > .004){
+      lastGlow = glow;
+      holdBtn.style.setProperty('--chg', glow.toFixed(3));
+    }
 
     // --- ambient dust drift
     for (const d of dust){
@@ -493,6 +660,40 @@ body{background:#04060c;color:var(--ink);
   }
 
   /* ==================== render ==================== */
+  /* One pre-rendered radial-gradient sprite, tinted per particle through a
+     scratch canvas. Replaces the old per-particle-per-frame
+     createRadialGradient (up to ~500 allocations/frame during a max burst)
+     while producing the same soft halo: white ramp × tint × globalAlpha. */
+  const HALO_R = 32;                              // sprite radius, px
+  const haloSprite = document.createElement('canvas');
+  haloSprite.width = haloSprite.height = HALO_R * 2;
+  const haloTint = document.createElement('canvas');
+  haloTint.width = haloTint.height = HALO_R * 2;
+  {
+    const sg = haloSprite.getContext('2d');
+    const grad = sg.createRadialGradient(HALO_R, HALO_R, 0, HALO_R, HALO_R, HALO_R);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    sg.fillStyle = grad;
+    sg.fillRect(0, 0, HALO_R * 2, HALO_R * 2);
+  }
+  const htx = haloTint.getContext('2d');
+  function drawHalo(x, y, r, rgb, alpha){
+    if (!(alpha > 0) || !(r > 0)) return;
+    const span = HALO_R * 2;
+    const d = Math.max(1, Math.min(span, Math.round(r * 2)));
+    const off = (span - d) / 2;
+    htx.globalCompositeOperation = 'source-over';
+    htx.clearRect(0, 0, span, span);
+    htx.drawImage(haloSprite, off, off, d, d);
+    htx.globalCompositeOperation = 'source-in';
+    htx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    htx.fillRect(0, 0, span, span);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(haloTint, off, off, d, d, x - d / 2, y - d / 2, d, d);
+    ctx.globalAlpha = 1;
+  }
+
   let time = 0;
   function draw(ts){
     const dt = Math.min(3, (ts - (draw._last || ts)) / 16.667) || 1;
@@ -503,9 +704,9 @@ body{background:#04060c;color:var(--ink);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    // shake
+    // shake (reduced motion: never applied)
     let sx = 0, sy = 0;
-    if (shake > .3){
+    if (!calm && shake > .3){
       sx = (Math.random() - .5) * shake;
       sy = (Math.random() - .5) * shake;
       ctx.translate(sx, sy);
@@ -600,12 +801,8 @@ body{background:#04060c;color:var(--ink);
       const a = Math.min(1, p.life * 1.4);
       ctx.fillStyle = rgba(p.cool, a);
       ctx.fillRect(p.x - p.size * .5, p.y - p.size * .5, p.size, p.size);
-      // tiny halo
-      const hg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
-      hg.addColorStop(0, rgba(p.cool, a * .35));
-      hg.addColorStop(1, rgba(p.cool, 0));
-      ctx.fillStyle = hg;
-      ctx.fillRect(p.x - p.size * 3, p.y - p.size * 3, p.size * 6, p.size * 6);
+      // tiny halo (cached sprite, tinted — no per-particle gradient)
+      drawHalo(p.x, p.y, p.size * 3, p.cool, a * .35);
     }
 
     ctx.globalCompositeOperation = 'source-over';
@@ -628,14 +825,27 @@ body{background:#04060c;color:var(--ink);
       ctx.lineCap = 'butt';
     }
 
-    // flash overlay — brief white sheet at burst
+    // flash overlay — brief white sheet at burst.
+    // Reduced motion: no white sheet; a soft, contained glow around the seed.
     if (flash > .01){
-      const fg = ctx.createRadialGradient(seedX, seedY, 0, seedX, seedY, Math.max(W, H) * .8);
-      fg.addColorStop(0, `rgba(255,255,255,${flash})`);
-      fg.addColorStop(.4, `rgba(200,220,255,${flash * .35})`);
-      fg.addColorStop(1, 'rgba(200,220,255,0)');
-      ctx.fillStyle = fg;
-      ctx.fillRect(-40, -40, W + 80, H + 80);
+      if (calm){
+        const r = Math.min(W, H) * .6;
+        const fg = ctx.createRadialGradient(seedX, seedY, 0, seedX, seedY, r);
+        fg.addColorStop(0, `rgba(226,238,255,${flash * .55})`);
+        fg.addColorStop(.45, `rgba(190,215,255,${flash * .18})`);
+        fg.addColorStop(1, 'rgba(190,215,255,0)');
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.arc(seedX, seedY, r, 0, 6.28);
+        ctx.fill();
+      } else {
+        const fg = ctx.createRadialGradient(seedX, seedY, 0, seedX, seedY, Math.max(W, H) * .8);
+        fg.addColorStop(0, `rgba(255,255,255,${flash})`);
+        fg.addColorStop(.4, `rgba(200,220,255,${flash * .35})`);
+        fg.addColorStop(1, 'rgba(200,220,255,0)');
+        ctx.fillStyle = fg;
+        ctx.fillRect(-40, -40, W + 80, H + 80);
+      }
     }
 
     requestAnimationFrame(frame);

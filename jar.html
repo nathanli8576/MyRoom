@@ -7,8 +7,18 @@
 <meta name="description" content="Seal a worry until a date you choose. When it opens, decide whether it mattered.">
 <meta name="theme-color" content="#100e18">
 <style>
-:root{--bg:#100e18;--ink:#e6e1f2;--mute:#9a90b8;--dim:#6a6280;--line:rgba(190,170,230,.14);--accent:200,180,230}
+:root{--bg:#100e18;--ink:#e6e1f2;--mute:#9a90b8;--dim:#6a6280;--line:rgba(190,170,230,.14);--accent:200,180,230;
+  --ease:cubic-bezier(.2,.7,.3,1);--t:170ms;
+  --surface:rgba(255,255,255,.03);--hairline:rgba(255,255,255,.1);
+  --lift:0 1px 2px rgba(0,0,0,.25),0 22px 46px -32px rgba(0,0,0,.85)}
 *{box-sizing:border-box}
+/* one consistent focus ring for every focusable element */
+:focus-visible{outline:2px solid rgba(var(--accent),.9);outline-offset:2px}
+button{
+  transition:border-color var(--t) var(--ease),background var(--t) var(--ease),
+    color var(--t) var(--ease),box-shadow var(--t) var(--ease),transform var(--t) var(--ease);
+}
+button:active{transform:scale(.97)}
 html,body{margin:0;min-height:100%}
 body{
   background:
@@ -23,9 +33,12 @@ body{
 }
 .back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
   width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);text-decoration:none;border:1px solid var(--line);
-  background:rgba(255,255,255,.03);transition:color .3s,border-color .3s,background .3s}
-.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.08)}
+  color:var(--mute);text-decoration:none;border:1px solid var(--hairline);
+  background:rgba(255,255,255,.04);box-shadow:0 1px 2px rgba(0,0,0,.3);
+  transition:color var(--t) var(--ease),border-color var(--t) var(--ease),
+    background var(--t) var(--ease),transform var(--t) var(--ease)}
+.back:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.1)}
+.back:active{transform:scale(.94)}
 header{text-align:center;max-width:560px;margin-bottom:8px}
 h1{margin:0;font-weight:300;font-size:clamp(26px,4.5vw,36px);letter-spacing:.14em}
 .sub{margin:10px 0 0;color:var(--mute);font-style:italic;font-size:15px;line-height:1.6}
@@ -43,23 +56,38 @@ h1{margin:0;font-weight:300;font-size:clamp(26px,4.5vw,36px);letter-spacing:.14e
 .summary{
   margin:6px 0 4px;text-align:center;color:var(--mute);
   font-style:italic;font-size:14px;line-height:1.6;min-height:1.5em;
+  font-variant-numeric:tabular-nums;
 }
 .ready-callout{
-  margin:0 0 22px;text-align:center;font-size:14px;line-height:1.6;
+  width:min(520px,100%);margin:0 auto 16px;
+  display:flex;gap:8px 14px;align-items:center;justify-content:center;flex-wrap:wrap;
+  min-height:40px;padding:5px 14px;border-radius:14px;
+  border:1px solid rgba(255,216,160,.22);
+  background:rgba(255,216,160,.05);
+  font-size:14px;line-height:1.5;
   color:#ffd8a0;letter-spacing:.02em;
-  opacity:0;transition:opacity .6s ease;min-height:1.5em;
+  opacity:0;transition:opacity .6s var(--ease);
 }
 .ready-callout.show{opacity:1}
+.ready-open{
+  padding:8px 18px;border-radius:999px;
+  font-size:13px;letter-spacing:.06em;
+  color:#ffe9c8;cursor:pointer;
+  border:1px solid rgba(255,216,160,.45);
+  background:linear-gradient(rgba(255,216,160,.18),rgba(255,216,160,.06));
+}
+.ready-open:hover{color:#fff8ec;border-color:rgba(255,228,184,.85);box-shadow:0 0 22px rgba(255,216,160,.3)}
 
 .compose{
   width:min(520px,100%);
-  background:rgba(255,255,255,.025);
-  border:1px solid var(--line);
+  background:var(--surface);
+  border:1px solid var(--hairline);
   border-radius:18px;
   padding:20px 22px 18px;
-  transition:border-color .4s,box-shadow .4s;
+  box-shadow:var(--lift);
+  transition:border-color .4s var(--ease),box-shadow .4s var(--ease);
 }
-.compose:focus-within{border-color:rgba(var(--accent),.35);box-shadow:0 0 40px rgba(var(--accent),.06)}
+.compose:focus-within{border-color:rgba(var(--accent),.35);box-shadow:var(--lift),0 0 40px rgba(var(--accent),.07)}
 textarea{
   display:block;width:100%;min-height:100px;padding:12px 14px;resize:none;
   background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;
@@ -84,21 +112,23 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   font:inherit;font-size:13px;letter-spacing:.04em;
   cursor:pointer;
   text-align:center;
-  transition:all .3s ease;
+  transition:border-color var(--t) var(--ease),background var(--t) var(--ease),
+    color var(--t) var(--ease),box-shadow var(--t) var(--ease),transform var(--t) var(--ease);
   display:flex;flex-direction:column;gap:4px;align-items:center;
   position:relative;overflow:hidden;
 }
 .dur .dur-label{
   font-size:13.5px;
-  transition:color .3s;
+  transition:color var(--t) var(--ease);
 }
 .dur .dur-date{
   font-size:10.5px;
   letter-spacing:.1em;
   text-transform:uppercase;
+  font-variant-numeric:tabular-nums;
   opacity:.55;
   font-style:italic;
-  transition:opacity .3s,color .3s;
+  transition:opacity var(--t) var(--ease),color var(--t) var(--ease);
 }
 .dur:hover{
   color:var(--ink);
@@ -131,6 +161,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   font-size:10px;color:#e5d8ff;opacity:.9;
   text-shadow:0 0 8px rgba(var(--accent),.8);
 }
+.dur:active{transform:scale(.97)}
 
 .seal-row{
   display:flex;justify-content:space-between;align-items:center;
@@ -138,6 +169,7 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
 }
 .opens-on{
   margin:0;color:var(--dim);font-size:12px;letter-spacing:.04em;font-style:italic;line-height:1.5;
+  font-variant-numeric:tabular-nums;
   flex:1;
 }
 .opens-on b{color:var(--mute);font-weight:400;font-style:normal}
@@ -147,11 +179,12 @@ textarea:focus{border-color:rgba(var(--accent),.45);box-shadow:0 0 0 4px rgba(va
   color:#ebe4ff;font-size:14px;letter-spacing:.08em;
   border:1px solid rgba(var(--accent),.5);
   background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.06));
-  transition:box-shadow .4s,border-color .4s,transform .2s,opacity .4s;
+  transition:border-color var(--t) var(--ease),box-shadow var(--t) var(--ease),
+    transform var(--t) var(--ease),opacity var(--t) var(--ease);
   white-space:nowrap;
 }
 .seal:hover:not(:disabled){box-shadow:0 0 28px rgba(var(--accent),.35);border-color:rgba(var(--accent),.85)}
-.seal:active:not(:disabled){transform:scale(.98)}
+.seal:active:not(:disabled){transform:scale(.97)}
 .seal:disabled{opacity:.32;cursor:default}
 
 details.log{
@@ -165,8 +198,9 @@ details.log summary{
   color:var(--mute);font-size:13px;letter-spacing:.08em;
   font-style:italic;padding:6px 0;
   outline:none;
-  transition:color .3s;
+  transition:color var(--t) var(--ease);
 }
+details.log summary:focus-visible{outline:2px solid rgba(var(--accent),.9);outline-offset:3px;border-radius:6px}
 details.log summary::-webkit-details-marker{display:none}
 details.log summary::before{content:'▸ ';transition:transform .3s;display:inline-block;margin-right:4px}
 details.log[open] summary::before{transform:rotate(90deg);display:inline-block}
@@ -175,10 +209,23 @@ details.log summary:hover{color:var(--ink)}
 .log-row{
   display:flex;gap:12px;align-items:flex-start;
   padding:11px 14px;
-  background:rgba(255,255,255,.02);
-  border:1px solid var(--line);border-radius:12px;
+  background:var(--surface);
+  border:1px solid rgba(255,255,255,.08);border-radius:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.22),0 14px 30px -26px rgba(0,0,0,.8);
   font-size:13.5px;line-height:1.55;
   opacity:var(--o,1);
+  transition:border-color var(--t) var(--ease),background var(--t) var(--ease),
+    box-shadow var(--t) var(--ease);
+}
+/* ripe / done states — color AND shape, never color alone */
+.log-row.is-ready{
+  border-color:rgba(255,216,160,.42);
+  background:rgba(255,216,160,.055);
+  box-shadow:0 1px 2px rgba(0,0,0,.22),0 0 24px -8px rgba(255,216,160,.4);
+}
+.log-row.is-done{
+  border-color:rgba(255,255,255,.06);
+  background:rgba(255,255,255,.014);
 }
 .log-dot{
   width:9px;height:9px;border-radius:50%;
@@ -187,8 +234,20 @@ details.log summary:hover{color:var(--ink)}
   color:var(--c,#9a90b8);
   background:var(--c,#9a90b8);
 }
+.log-row.is-ready .log-dot{border-radius:2px;transform:rotate(45deg);box-shadow:0 0 10px currentColor}
+.log-row.is-done .log-dot{background:transparent;border:2px solid currentColor;box-shadow:none;opacity:.85}
 .log-body{flex:1;min-width:0;color:var(--ink);word-break:break-word}
-.log-meta{color:var(--dim);font-size:11.5px;letter-spacing:.04em;font-style:italic;margin-top:3px}
+.log-meta{color:var(--dim);font-size:11.5px;letter-spacing:.06em;font-style:italic;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.log-open{
+  flex:none;margin-top:1px;
+  padding:6px 14px;border-radius:999px;
+  font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--mute);cursor:pointer;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.05);
+}
+.log-open:hover{color:var(--ink);border-color:rgba(var(--accent),.6);background:rgba(var(--accent),.1)}
 
 .resolver{
   position:fixed;inset:0;z-index:8;
@@ -200,16 +259,19 @@ details.log summary:hover{color:var(--ink)}
 .resolver-inner{
   max-width:440px;width:100%;
   background:rgba(20,17,32,.96);
-  border:1px solid rgba(var(--accent),.3);border-radius:18px;
+  border:1px solid rgba(255,255,255,.12);border-radius:20px;
   padding:28px 26px 22px;position:relative;
-  box-shadow:0 30px 80px -30px rgba(0,0,0,.9);
+  box-shadow:0 0 0 1px rgba(var(--accent),.16),0 2px 6px rgba(0,0,0,.4),
+    0 34px 72px -30px rgba(0,0,0,.95);
 }
+.resolver-inner:focus{outline:none}
+.resolver-inner:focus-visible{outline:2px solid rgba(var(--accent),.9);outline-offset:6px;border-radius:20px}
 .resolver-q{margin:0 0 6px;font-size:19px;font-weight:400;color:#efe8ff}
 .resolver-date{margin:0 0 18px;color:var(--dim);font-size:11.5px;letter-spacing:.1em;
-  text-transform:uppercase;font-style:italic}
+  text-transform:uppercase;font-style:italic;font-variant-numeric:tabular-nums}
 .resolver-text{
   margin:0 0 22px;padding:14px 16px;
-  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:12px;
   font-size:15px;line-height:1.7;color:var(--ink);white-space:pre-wrap;
 }
 .resolver-btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
@@ -217,7 +279,6 @@ details.log summary:hover{color:var(--ink)}
   font:inherit;cursor:pointer;
   padding:10px 22px;border-radius:999px;
   font-size:13.5px;letter-spacing:.06em;
-  transition:box-shadow .3s,border-color .3s,background .3s,color .3s,transform .2s;
 }
 .resolver-btns .neutral{
   background:none;color:var(--mute);border:1px solid var(--line);
@@ -235,10 +296,11 @@ details.log summary:hover{color:var(--ink)}
 .resolver-btns .true:hover{box-shadow:0 0 24px rgba(220,140,140,.3);border-color:rgba(255,180,180,.85)}
 .resolver-close{
   position:absolute;top:10px;right:12px;width:30px;height:30px;border-radius:999px;
-  display:grid;place-items:center;background:none;border:1px solid var(--line);color:var(--mute);
-  cursor:pointer;font-size:17px;line-height:1;padding:0;transition:color .3s,border-color .3s;
+  display:grid;place-items:center;background:none;border:1px solid rgba(255,255,255,.14);
+  color:var(--mute);
+  cursor:pointer;font-size:17px;line-height:1;padding:0;
 }
-.resolver-close:hover{color:var(--ink);border-color:rgba(var(--accent),.5)}
+.resolver-close:hover{color:var(--ink);border-color:rgba(var(--accent),.55);background:rgba(var(--accent),.08)}
 
 .toast{
   position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(8px);
@@ -265,20 +327,23 @@ details.log summary:hover{color:var(--ink)}
 </div>
 
 <p class="summary" id="summary">Your jar is empty.</p>
-<p class="ready-callout" id="readyCallout"></p>
+<div class="ready-callout" id="readyCallout">
+  <span id="readyText"></span>
+  <button type="button" class="ready-open" id="readyOpen" hidden>Open the ripe worry</button>
+</div>
 
 <div class="compose">
-  <textarea id="worry" maxlength="400" placeholder="What are you worrying about?"></textarea>
+  <textarea id="worry" maxlength="400" placeholder="What are you worrying about?" aria-label="Your worry"></textarea>
   <div class="durations" role="radiogroup" aria-label="Seal for how long?">
-    <button class="dur" type="button" role="radio" aria-checked="true" data-days="7">
+    <button class="dur" type="button" role="radio" aria-checked="true" tabindex="0" data-days="7">
       <span class="dur-label">One week</span>
       <span class="dur-date" data-date></span>
     </button>
-    <button class="dur" type="button" role="radio" aria-checked="false" data-days="30">
+    <button class="dur" type="button" role="radio" aria-checked="false" tabindex="-1" data-days="30">
       <span class="dur-label">One month</span>
       <span class="dur-date" data-date></span>
     </button>
-    <button class="dur" type="button" role="radio" aria-checked="false" data-days="365">
+    <button class="dur" type="button" role="radio" aria-checked="false" tabindex="-1" data-days="365">
       <span class="dur-label">One year</span>
       <span class="dur-date" data-date></span>
     </button>
@@ -295,9 +360,9 @@ details.log summary:hover{color:var(--ink)}
 </details>
 
 <div class="resolver" id="resolver">
-  <div class="resolver-inner">
+  <div class="resolver-inner" id="resolverPanel" role="dialog" aria-modal="true" aria-labelledby="resolverQ" tabindex="-1">
     <button class="resolver-close" id="resolverClose" aria-label="Close">×</button>
-    <p class="resolver-q">Did it matter?</p>
+    <p class="resolver-q" id="resolverQ">Did it matter?</p>
     <p class="resolver-date" id="resolverDate"></p>
     <p class="resolver-text" id="resolverText"></p>
     <div class="resolver-btns">
@@ -315,11 +380,14 @@ details.log summary:hover{color:var(--ink)}
   const $ = s => document.querySelector(s);
   const canvas = $('#jar'), ctx = canvas.getContext('2d');
   const worryEl = $('#worry'), sealBtn = $('#seal'), summary = $('#summary'),
-        readyCallout = $('#readyCallout'), logList = $('#logList'),
+        readyCallout = $('#readyCallout'), readyText = $('#readyText'), readyOpen = $('#readyOpen'),
+        logList = $('#logList'),
         opensOn = $('#opensOn'), durBtns = [...document.querySelectorAll('.dur')],
-        resolver = $('#resolver'), resolverText = $('#resolverText'), resolverDate = $('#resolverDate'),
+        resolver = $('#resolver'), resolverPanel = $('#resolverPanel'),
+        resolverText = $('#resolverText'), resolverDate = $('#resolverDate'),
         resolverClose = $('#resolverClose'), resolverLater = $('#resolverLater'),
         toastEl = $('#toast');
+  const logSummary = document.querySelector('details.log summary');
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const KEY = 'worry-jar:v2';
@@ -334,6 +402,7 @@ details.log summary:hover{color:var(--ink)}
   let jarW=0, jarH=0, jdpr=1;
   let jar = { left: 0, right: 0, top: 0, bottom: 0 };
   let readyOrbId = null;
+  let earliestReadyId = null;
   let lastFrame = performance.now();
   let pulsePhase = 0;
 
@@ -468,10 +537,12 @@ details.log summary:hover{color:var(--ink)}
 
       if (o.mode === 'ready'){
         // ready orbs float upward toward the top of the jar
-        const targetY = jar.top + o.r + 6 + Math.sin(pulsePhase * .8 + o.seed) * 3;
+        // calm (reduced motion): hold a fixed target — no bobbing, no lateral drift
+        const bob = calm ? 0 : Math.sin(pulsePhase * .8 + o.seed) * 3;
+        const targetY = jar.top + o.r + 6 + bob;
         o.vy += (targetY - o.y) * .008 * dt;
         o.vy *= .88;
-        o.vx += Math.sin(pulsePhase * .6 + o.seed) * .015 * dt;
+        if (!calm) o.vx += Math.sin(pulsePhase * .6 + o.seed) * .015 * dt;
         o.vx *= .92;
       } else {
         o.vy += g * dt;
@@ -523,12 +594,14 @@ details.log summary:hover{color:var(--ink)}
 
   /* ---------- pops & bubbles ---------- */
   function popAt(x, y, color){
-    for (let i = 0; i < 28; i++){
+    const n = calm ? 10 : 28;          // smaller, faster burst under reduced motion
+    const decayBase = calm ? .03 : .012;
+    for (let i = 0; i < n; i++){
       const a = Math.random() * 6.28;
       const sp = .8 + Math.random() * 2.6;
       pops.push({
         x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - .6,
-        life: 1, decay: .012 + Math.random() * .008,
+        life: 1, decay: decayBase + Math.random() * .008,
         color, seed: Math.random() * 6.28,
         size: 1 + Math.random() * 2
       });
@@ -712,6 +785,9 @@ details.log summary:hover{color:var(--ink)}
     const col = colorForDays(days);
     const isKept = o.mode === 'kept';
     const isReady = o.mode === 'ready';
+    // under reduced motion all phase-driven animation is frozen: static glow,
+    // static rim, seeds and sparks parked at fixed angles
+    const ph = calm ? 0 : pulsePhase;
 
     let baseCol = isKept
       ? { r:110, g:100, b:130 }
@@ -720,10 +796,10 @@ details.log summary:hover{color:var(--ink)}
         : col;
 
     // soft glow behind the orb
-    const glowR = o.r * (isReady ? 2.4 + Math.sin(pulsePhase * 2 + o.seed) * .5 : 1.7);
+    const glowR = o.r * (isReady ? 2.4 + Math.sin(ph * 2 + o.seed) * .5 : 1.7);
     const grd = ctx.createRadialGradient(o.x, o.y, o.r * .3, o.x, o.y, glowR);
     if (isReady){
-      const pulse = .55 + .35 * Math.sin(pulsePhase * 2 + o.seed);
+      const pulse = .55 + .35 * Math.sin(ph * 2 + o.seed);
       grd.addColorStop(0, `rgba(255,235,180,${.55 * pulse})`);
       grd.addColorStop(.5, `rgba(255,200,120,${.22 * pulse})`);
       grd.addColorStop(1, 'rgba(255,200,120,0)');
@@ -764,7 +840,7 @@ details.log summary:hover{color:var(--ink)}
 
     // rim light
     ctx.strokeStyle = isReady
-      ? `rgba(255,240,200,${.7 + .3 * Math.sin(pulsePhase * 2 + o.seed)})`
+      ? `rgba(255,240,200,${.7 + .3 * Math.sin(ph * 2 + o.seed)})`
       : isKept
         ? 'rgba(180,170,200,.35)'
         : `rgba(${Math.min(255,baseCol.r+40)},${Math.min(255,baseCol.g+40)},${Math.min(255,baseCol.b+40)},.55)`;
@@ -782,7 +858,7 @@ details.log summary:hover{color:var(--ink)}
     // tiny seeds inside the orb — gives it character
     const seedN = isKept ? 1 : 3;
     for (let i = 0; i < seedN; i++){
-      const a = o.seed + i * 2.1 + pulsePhase * .2;
+      const a = o.seed + i * 2.1 + ph * .2;
       const rr = o.r * .35;
       ctx.beginPath();
       ctx.arc(
@@ -795,14 +871,14 @@ details.log summary:hover{color:var(--ink)}
       ctx.fill();
     }
 
-    // ready badge — an orbiting spark
+    // ready badge — an orbiting spark (parked at fixed angles under calm)
     if (isReady){
       for (let i = 0; i < 3; i++){
-        const a = pulsePhase * 1.2 + i * 2.09 + o.seed;
+        const a = ph * 1.2 + i * 2.09 + o.seed;
         const rr = o.r * 1.35;
         ctx.beginPath();
         ctx.arc(o.x + Math.cos(a) * rr, o.y + Math.sin(a) * rr, 1.6, 0, 6.28);
-        ctx.fillStyle = `rgba(255,240,180,${.65 + .35 * Math.sin(pulsePhase * 3 + i)})`;
+        ctx.fillStyle = `rgba(255,240,180,${.65 + .35 * Math.sin(ph * 3 + i)})`;
         ctx.fill();
       }
     }
@@ -812,7 +888,7 @@ details.log summary:hover{color:var(--ink)}
   function frame(ts){
     const dtReal = Math.min(3, (ts - lastFrame) / 16.667) || 1;
     lastFrame = ts;
-    pulsePhase += dtReal * .05;
+    if (!calm) pulsePhase += dtReal * .05;
     const dt = dtReal;
 
     stepPhysics(dt);
@@ -849,7 +925,9 @@ details.log summary:hover{color:var(--ink)}
   /* ---------- summary + log ---------- */
   function refreshSummary(){
     const sealed = worries.filter(w => !w.outcome).length;
-    const ready = worries.filter(w => !w.outcome && Date.now() >= w.opensAt).length;
+    const readyWorries = worries.filter(w => !w.outcome && Date.now() >= w.opensAt)
+      .sort((a, b) => a.opensAt - b.opensAt);
+    const ready = readyWorries.length;
     const kept = worries.filter(w => w.outcome === 'true').length;
     const cleared = worries.filter(w => w.outcome === 'nothing').length;
 
@@ -863,14 +941,22 @@ details.log summary:hover{color:var(--ink)}
       summary.textContent = parts.join(' · ');
     }
     if (ready > 0){
-      readyCallout.textContent = ready === 1
+      readyText.textContent = ready === 1
         ? 'One worry is ready — look for the glowing orb.'
         : `${ready} worries are ready — look for the glowing orbs.`;
+      readyOpen.textContent = ready === 1 ? 'Open the ripe worry' : 'Open a ripe worry';
+      earliestReadyId = readyWorries[0].id;
+      readyOpen.hidden = false;
       readyCallout.classList.add('show');
     } else {
+      earliestReadyId = null;
+      readyOpen.hidden = true;
       readyCallout.classList.remove('show');
     }
   }
+  readyOpen.addEventListener('click', () => {
+    if (earliestReadyId) openResolver(earliestReadyId);
+  });
 
   function refreshLog(){
     if (!worries.length){
@@ -894,19 +980,40 @@ details.log summary:hover{color:var(--ink)}
             ? `ready to open`
             : `sealed until ${fmtShort(w.opensAt)}`;
       const opacity = (isCleared || isKept) ? .55 : 1;
-      return `<div class="log-row" style="--o:${opacity}; --c:rgb(${col.r},${col.g},${col.b})">
-        <span class="log-dot"></span>
+      const stateClass = isReady ? ' is-ready' : (isCleared || isKept) ? ' is-done' : '';
+      const label = w.body.length > 48 ? w.body.slice(0, 48) + '…' : w.body;
+      const openBtn = isReady
+        ? `<button type="button" class="log-open" data-open="${escapeHtml(w.id)}" aria-label="Open ripe worry: ${escapeHtml(label)}">Open</button>`
+        : '';
+      return `<div class="log-row${stateClass}" style="--o:${opacity}; --c:rgb(${col.r},${col.g},${col.b})">
+        <span class="log-dot" aria-hidden="true"></span>
         <div style="flex:1;min-width:0">
           <div class="log-body">${escapeHtml(w.body)}</div>
           <div class="log-meta">${meta}</div>
         </div>
+        ${openBtn}
       </div>`;
     }).join('');
   }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 
+  // delegated: Open buttons inside re-rendered log rows
+  logList.addEventListener('click', e => {
+    const btn = e.target.closest('[data-open]');
+    if (btn) openResolver(btn.getAttribute('data-open'));
+  });
+
   /* ---------- resolver ---------- */
   let resolverWorryId = null;
+  let resolverReturnFocus = null;
+  // everything behind the overlay goes inert while the dialog is open
+  const bgNodes = [...document.body.children].filter(el => el !== resolver && el !== toastEl);
+  function setBackgroundInert(on){
+    for (const el of bgNodes){
+      if (on) el.setAttribute('inert', '');
+      else el.removeAttribute('inert');
+    }
+  }
   function openResolver(id){
     const w = worries.find(x => x.id === id);
     if (!w || w.outcome) return;
@@ -914,16 +1021,46 @@ details.log summary:hover{color:var(--ink)}
     resolverWorryId = id;
     resolverText.textContent = w.body;
     resolverDate.textContent = `Sealed ${fmtShort(w.at)} · opened today`;
+    resolverReturnFocus = document.activeElement;
     resolver.classList.add('show');
+    setBackgroundInert(true);
+    resolverPanel.focus({ preventScroll: true });
+  }
+  function focusEl(el){
+    if (!el || typeof el.focus !== 'function') return false;
+    if (el.disabled || !document.contains(el)) return false;
+    try { el.focus({ preventScroll: true }); return true; } catch(e){ return false; }
   }
   function closeResolver(){
+    if (!resolver.classList.contains('show')){ resolverWorryId = null; return; }
     resolver.classList.remove('show');
     resolverWorryId = null;
+    setBackgroundInert(false);
+    const target = resolverReturnFocus;
+    resolverReturnFocus = null;
+    // defer: resolve() re-renders the log right after closing, so let that settle
+    setTimeout(() => {
+      if (focusEl(target)) return;
+      if (!readyOpen.hidden && focusEl(readyOpen)) return;
+      focusEl(logSummary);
+    }, 0);
   }
   resolverClose.addEventListener('click', closeResolver);
   resolverLater.addEventListener('click', closeResolver);
   resolver.addEventListener('click', e => { if (e.target === resolver) closeResolver(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && resolver.classList.contains('show')) closeResolver(); });
+  // keep Tab inside the dialog while it is modal (background is inert)
+  resolver.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || !resolver.classList.contains('show')) return;
+    const focusables = [...resolver.querySelectorAll('button')];
+    if (!focusables.length) return;
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === resolverPanel)){
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && document.activeElement === last){
+      e.preventDefault(); first.focus();
+    }
+  });
   resolver.querySelectorAll('[data-answer]').forEach(b => {
     b.addEventListener('click', () => resolve(resolverWorryId, b.dataset.answer));
   });
@@ -993,10 +1130,15 @@ details.log summary:hover{color:var(--ink)}
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) sealWorry();
   });
 
+  function syncDurTabs(){
+    // roving tabindex: only the checked radio is a Tab stop
+    durBtns.forEach(x => { x.tabIndex = x.getAttribute('aria-checked') === 'true' ? 0 : -1; });
+  }
   durBtns.forEach(b => {
     b.addEventListener('click', () => {
       selectedDays = Number(b.dataset.days);
       durBtns.forEach(x => x.setAttribute('aria-checked', x === b));
+      syncDurTabs();
       updateOpensOnLine();
     });
     b.addEventListener('keydown', e => {
@@ -1013,13 +1155,17 @@ details.log summary:hover{color:var(--ink)}
   });
 
   /* ---------- boot ---------- */
+  let booted = false;
   function boot(){
+    if (booted) return;   // idempotent: DOMContentLoaded path and load path may both fire
+    booted = true;
     resizeJar();
     updateDurationLabels();
     updateOpensOnLine();
+    syncDurTabs();
     refreshSummary();
     refreshLog();
-    requestAnimationFrame(frame);
+    requestAnimationFrame(frame);   // the one and only rAF chain
   }
   addEventListener('resize', () => {
     resizeJar();

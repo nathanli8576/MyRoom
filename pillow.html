@@ -19,20 +19,31 @@ body{
   -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
   touch-action:manipulation}
 #c{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;
-  touch-action:none;cursor:pointer}
+  touch-action:none;cursor:pointer;outline:none}
+#c:focus-visible{outline:2px solid rgba(var(--accent),.55);outline-offset:-6px}
 
-.back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);text-decoration:none;border:1px solid var(--line);
+/* shared chrome buttons (back + mute) */
+.back,.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:5;
+  width:38px;height:38px;display:grid;place-items:center;border-radius:999px;
+  color:var(--mute);border:1px solid rgba(255,255,255,.12);
+  padding:0;margin:0;text-decoration:none;cursor:pointer;
   background:rgba(24,14,20,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
-.mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
-  color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
-  background:rgba(24,14,20,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s}
-.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+  box-shadow:0 8px 22px rgba(0,0,0,.38),0 2px 6px rgba(0,0,0,.32),
+             inset 0 1px 0 rgba(255,255,255,.07);
+  transition:color .18s cubic-bezier(.2,.7,.3,1),
+             border-color .18s cubic-bezier(.2,.7,.3,1),
+             background .18s cubic-bezier(.2,.7,.3,1),
+             box-shadow .18s cubic-bezier(.2,.7,.3,1),
+             transform .15s cubic-bezier(.2,.7,.3,1)}
+.back{left:14px}
+.mute{right:14px}
+.back:hover,.mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);
+  background:rgba(var(--accent),.12);
+  box-shadow:0 10px 26px rgba(0,0,0,.42),0 0 0 1px rgba(var(--accent),.14),
+             inset 0 1px 0 rgba(255,255,255,.1)}
+.back:active,.mute:active{transform:scale(.94)}
+.back:focus-visible,.mute:focus-visible{
+  outline:2px solid rgba(var(--accent),.85);outline-offset:3px;color:var(--ink)}
 .mute svg{width:16px;height:16px}
 .mute .m{display:block}.mute .x{display:none}
 .mute.off .m{display:none}.mute.off .x{display:block}
@@ -50,7 +61,10 @@ body{
   border-radius:999px;
   background:rgba(30,16,22,.62);
   backdrop-filter:blur(10px);
-  border:1px solid var(--line);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 14px 34px rgba(0,0,0,.40),0 2px 8px rgba(0,0,0,.30),
+             inset 0 1px 0 rgba(255,255,255,.07);
+  font-variant-numeric:tabular-nums;
   transition:box-shadow .5s ease, border-color .5s ease;
   pointer-events:none;
 }
@@ -81,10 +95,16 @@ body{
 .xpbar .fill{
   position:absolute;inset:0 auto 0 0;width:0%;
   border-radius:999px;
-  background:linear-gradient(90deg,#c69a6a,#f0d6a6);
+  background:linear-gradient(90deg,#b98554,#e8c894 55%,#f6e2b8);
   box-shadow:0 0 10px rgba(255,215,160,.4);
   transition:width .28s cubic-bezier(.22,1,.36,1),
              background .3s ease,box-shadow .3s ease;
+}
+/* soft sheen across the fill so it reads as a raised, lit surface */
+.xpbar .fill::after{
+  content:"";position:absolute;inset:0;border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.05) 52%,
+             rgba(0,0,0,.14));
 }
 .xpbar.near .fill{
   background:linear-gradient(90deg,#e0a86a,#ffe4b8);
@@ -117,12 +137,14 @@ body{
   transform:translateX(-50%);
   z-index:4;
   display:flex;align-items:center;gap:12px;
-  padding:8px 20px;
+  padding:9px 20px;
   width:min(380px, calc(100% - 40px));
   border-radius:999px;
   background:rgba(30,16,22,.62);
   backdrop-filter:blur(10px);
-  border:1px solid var(--line);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 14px 34px rgba(0,0,0,.40),0 2px 8px rgba(0,0,0,.30),
+             inset 0 1px 0 rgba(255,255,255,.07);
 }
 .pressure .plabel{
   color:var(--dim);
@@ -137,27 +159,70 @@ body{
 }
 .pressure input[type=range]{
   -webkit-appearance:none;appearance:none;
-  flex:1;height:4px;border-radius:999px;
-  background:linear-gradient(90deg,#8a6a5a 0%,#c69a6a 55%,#ffb878 100%);
+  --p:0%;
+  flex:1;height:6px;border-radius:999px;
+  /* filled portion (--p, written by JS) over a hairline track */
+  background:
+    linear-gradient(90deg,rgba(var(--accent),.45),rgba(255,206,158,.95)) left/var(--p) 100% no-repeat,
+    linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.10)) left/100% 100% no-repeat,
+    rgba(255,255,255,.04);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.4);
   outline:none;cursor:pointer;padding:0;margin:0;
+  transition:box-shadow .18s cubic-bezier(.2,.7,.3,1),
+             background-size .18s cubic-bezier(.2,.7,.3,1);
+}
+.pressure input[type=range]:hover{
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.4),0 0 0 4px rgba(var(--accent),.08);
+}
+/* keyboard focus must stay visible even though the resting outline is off */
+.pressure input[type=range]:focus-visible{
+  outline:2px solid rgba(var(--accent),.85);
+  outline-offset:5px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.4),0 0 14px rgba(var(--accent),.28);
 }
 .pressure input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
   width:18px;height:18px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#fff4e0,#e0b88a 60%,#8a6a4a);
-  box-shadow:0 0 12px rgba(255,220,160,.6),inset 0 1px 2px rgba(255,255,255,.5);
+  box-shadow:0 0 0 1.5px rgba(30,16,22,.85),0 2px 6px rgba(0,0,0,.45),
+             0 0 12px rgba(255,220,160,.55),inset 0 1px 2px rgba(255,255,255,.5);
   cursor:pointer;
-  transition:box-shadow .2s ease,transform .15s ease;
+  transition:box-shadow .18s cubic-bezier(.2,.7,.3,1),transform .15s cubic-bezier(.2,.7,.3,1);
+}
+.pressure input[type=range]:hover::-webkit-slider-thumb{
+  box-shadow:0 0 0 1.5px rgba(30,16,22,.85),0 2px 8px rgba(0,0,0,.5),
+             0 0 18px rgba(255,220,160,.85),inset 0 1px 2px rgba(255,255,255,.5);
 }
 .pressure input[type=range]:active::-webkit-slider-thumb{
-  transform:scale(1.15);
-  box-shadow:0 0 20px rgba(255,220,160,1),inset 0 1px 2px rgba(255,255,255,.5);
+  transform:scale(1.12);
+  box-shadow:0 0 0 1.5px rgba(30,16,22,.85),0 2px 8px rgba(0,0,0,.5),
+             0 0 22px rgba(255,220,160,1),inset 0 1px 2px rgba(255,255,255,.5);
+}
+.pressure input[type=range]:focus-visible::-webkit-slider-thumb{
+  box-shadow:0 0 0 3px rgba(var(--accent),.6),0 2px 8px rgba(0,0,0,.5),
+             0 0 20px rgba(255,220,160,.95),inset 0 1px 2px rgba(255,255,255,.5);
+}
+.pressure input[type=range]::-moz-range-track{
+  height:6px;border-radius:999px;background:transparent;border:none;
+}
+.pressure input[type=range]::-moz-range-progress{
+  height:6px;border-radius:999px;background:transparent;border:none;
 }
 .pressure input[type=range]::-moz-range-thumb{
   width:18px;height:18px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,#fff4e0,#e0b88a 60%,#8a6a4a);
-  box-shadow:0 0 12px rgba(255,220,160,.6);
+  box-shadow:0 0 0 1.5px rgba(30,16,22,.85),0 2px 6px rgba(0,0,0,.45),
+             0 0 12px rgba(255,220,160,.55);
   border:none;cursor:pointer;
+  transition:box-shadow .18s cubic-bezier(.2,.7,.3,1);
+}
+.pressure input[type=range]:hover::-moz-range-thumb{
+  box-shadow:0 0 0 1.5px rgba(30,16,22,.85),0 2px 8px rgba(0,0,0,.5),
+             0 0 18px rgba(255,220,160,.85);
+}
+.pressure input[type=range]:focus-visible::-moz-range-thumb{
+  box-shadow:0 0 0 3px rgba(var(--accent),.6),0 2px 8px rgba(0,0,0,.5),
+             0 0 20px rgba(255,220,160,.95);
 }
 
 .hint{
@@ -179,11 +244,21 @@ body{
   opacity:1;
   transition:opacity .04s ease;
 }
-@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01s!important;animation-duration:.12s!important;
+    animation-iteration-count:1!important}
+}
+
+/* visually hidden live region for assistive tech */
+.sr{
+  position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);
+  white-space:nowrap;border:0;
+}
 </style>
 </head>
 <body>
-<canvas id="c" aria-hidden="true"></canvas>
+<canvas id="c" tabindex="0" aria-label="Pillow. Press and hold Space or Enter to squeeze it."></canvas>
 <a class="back" href="index.html" aria-label="Back to the shelf"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
 <button class="mute" id="mute" aria-label="Mute sound" aria-pressed="false">
   <svg class="m" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -196,7 +271,7 @@ body{
   </svg>
 </button>
 
-<div class="xpbar" id="xpbar" aria-hidden="true">
+<div class="xpbar" id="xpbar" role="img" aria-label="Level 1, 0 of 12 feathers">
   <span class="lv">LV <b id="lvNum">1</b></span>
   <div class="track"><div class="fill" id="barFill"></div></div>
   <span class="count" id="xpCount">0 / 12</span>
@@ -211,6 +286,7 @@ body{
 
 <div class="flash" id="flash" aria-hidden="true"></div>
 <p class="hint" id="hint">Press and hold to squeeze</p>
+<p class="sr" id="live" role="status" aria-live="polite"></p>
 
 <script>
 (() => {
@@ -219,8 +295,16 @@ body{
   const hint = $('#hint'), muteBtn = $('#mute');
   const xpbar = $('#xpbar'), lvNum = $('#lvNum'), barFill = $('#barFill'), xpCount = $('#xpCount');
   const pressureSlider = $('#pressureSlider'), pressureVal = $('#pressureVal');
-  const flash = $('#flash');
+  const flash = $('#flash'), live = $('#live');
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Announce meaningful state changes only (level-ups, pressure level),
+     never per-feather noise. */
+  let liveTimer = 0;
+  function announce(msg){
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => { live.textContent = msg; }, 60);
+  }
 
   /* ==================== canvas ==================== */
   let W = 0, H = 0, dpr = 1;
@@ -485,7 +569,7 @@ body{
   const paintMute = () => {
     muteBtn.classList.toggle('off', muted);
     muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
   };
   muteBtn.addEventListener('click', () => {
     muted = !muted;
@@ -509,6 +593,8 @@ body{
     lvNum.textContent = String(xpState.level);
     xpCount.textContent = `${Math.min(xpState.xp, xpState.xpMax)} / ${xpState.xpMax}`;
     xpbar.classList.toggle('near', pct >= 0.7);
+    xpbar.setAttribute('aria-label',
+      `Level ${xpState.level}, ${Math.min(xpState.xp, xpState.xpMax)} of ${xpState.xpMax} feathers`);
   }
 
   function awardFeather(){
@@ -525,12 +611,19 @@ body{
 
   function onLevelUp(){
     playLevelUpSound(xpState.level);
-    xpbar.classList.add('levelup', 'pulse');
-    flash.classList.add('show');
-    setTimeout(() => flash.classList.remove('show'), 120);
-    setTimeout(() => xpbar.classList.remove('levelup'), 900);
-    setTimeout(() => xpbar.classList.remove('pulse'), 700);
+    if (!calm){
+      xpbar.classList.add('levelup', 'pulse');
+      flash.classList.add('show');
+      setTimeout(() => flash.classList.remove('show'), 120);
+      setTimeout(() => xpbar.classList.remove('pulse'), 700);
+      setTimeout(() => xpbar.classList.remove('levelup'), 900);
+    } else {
+      // reduced motion: hold the glow long enough to read it, skip the pulse/flash
+      xpbar.classList.add('levelup');
+      setTimeout(() => xpbar.classList.remove('levelup'), 1600);
+    }
     levelUpFlash = 1;
+    announce(`Level ${xpState.level} reached`);
   }
 
   /* ==================== pressure slider ==================== */
@@ -544,6 +637,9 @@ body{
   } catch(e){}
   function refreshPressureLabel(){
     pressureVal.textContent = pressureMultiplier.toFixed(1) + '×';
+    // drive the filled portion of the track from the same stored value
+    const pct = ((pressureMultiplier - 1) / 4) * 100;
+    pressureSlider.style.setProperty('--p', pct.toFixed(2) + '%');
     // tint the readout toward warm as intensity increases
     const t = (pressureMultiplier - 1) / 4;
     const r = Math.round(176 + t * 79);
@@ -551,10 +647,15 @@ body{
     const b = Math.round(136 - t * 60);
     pressureVal.style.color = `rgb(${r},${g},${b})`;
   }
+  // debounce: a drag fires many input events; announce the settled value once
+  let pressureAnnounceTimer = 0;
   pressureSlider.addEventListener('input', () => {
     pressureMultiplier = Number(pressureSlider.value);
     refreshPressureLabel();
     try { localStorage.setItem('pillow:pressure', String(pressureMultiplier)); } catch(e){}
+    clearTimeout(pressureAnnounceTimer);
+    pressureAnnounceTimer = setTimeout(
+      () => announce(`Press intensity ${pressureMultiplier.toFixed(1)} times`), 450);
   });
   refreshPressureLabel();
 
@@ -585,6 +686,7 @@ body{
 
   /* ==================== pointer ==================== */
   let pointer = { x: 0, y: 0, down: false, activeId: null };
+  let keyHeld = false;
 
   function pointerInside(){
     if (!pointer.down) return false;
@@ -601,17 +703,19 @@ body{
 
   function spawnFeather(x, y, vx, vy){
     if (feathers.length >= MAX_FEATHERS) return;
+    // reduced motion still awards feathers — just slower, shorter-lived drift
+    const sedate = calm ? 0.5 : 1;
     feathers.push({
       x, y,
-      vx: vx + (Math.random() - .5) * .3,
-      vy: vy + (Math.random() - .5) * .2,
+      vx: (vx + (Math.random() - .5) * .3) * sedate,
+      vy: (vy + (Math.random() - .5) * .2) * sedate,
       rot: Math.random() * Math.PI * 2,
-      vr: (Math.random() - .5) * .07,
+      vr: (Math.random() - .5) * .07 * sedate,
       life: 1,
-      decay: 0.0018 + Math.random() * 0.0016,
+      decay: (0.0018 + Math.random() * 0.0016) * (calm ? 1.8 : 1),
       size: 3.5 + Math.random() * 5,
       seed: Math.random() * 6.28,
-      sway: 0.4 + Math.random() * 0.6,
+      sway: (0.4 + Math.random() * 0.6) * (calm ? 0.6 : 1),
       chimed: false
     });
     awardFeather();
@@ -672,10 +776,12 @@ body{
   /* ==================== ambient dust ==================== */
   const dust = [];
   (function initDust(){
+    // seed with viewport size directly — W/H are still 0 at parse time
+    const dw = innerWidth, dh = innerHeight;
     const dn = calm ? 24 : 52;
     for (let i = 0; i < dn; i++){
       dust.push({
-        x: Math.random() * W, y: Math.random() * H,
+        x: Math.random() * dw, y: Math.random() * dh,
         r: 0.5 + Math.random() * 1.1,
         vx: (Math.random() - .5) * .12,
         vy: -0.02 - Math.random() * .06,
@@ -750,11 +856,12 @@ body{
     }
 
     /* Feather spawn rate now scales with the pressure slider.
-       rateMult = pressureMultiplier^0.8 (sub-linear so 5x isn't 5x the mess) */
+       rateMult = pressureMultiplier^0.8 (sub-linear so 5x isn't 5x the mess)
+       reduced-motion users still earn XP — just slower and quieter. */
     const rateMult = Math.pow(pressureMultiplier, 0.8);
-    const baseRate = 0.11;
+    const baseRate = calm ? 0.055 : 0.11;
 
-    if (inside && pressPressure > 0.3 && deepestD > 5 && !calm){
+    if (inside && pressPressure > 0.3 && deepestD > 5){
       featherSpawnAccum += dt * pressPressure * baseRate * rateMult;
       while (featherSpawnAccum >= 1){
         featherSpawnAccum -= 1;
@@ -762,18 +869,21 @@ body{
         const sy = pillowCY + deepest.y + (Math.random() - .5) * 24;
         spawnFeather(
           sx, sy,
-          (Math.random() - .5) * 0.8 + (pointer.x - sx) * 0.004,
-          -0.55 - Math.random() * 0.6
+          (Math.random() - .5) * (calm ? .35 : .8)
+            + (pointer.x - sx) * 0.004 * (calm ? .5 : 1),
+          -(calm ? .3 : .55) - Math.random() * (calm ? .2 : .6)
         );
-        playFeatherWhoosh();
+        if (!calm) playFeatherWhoosh();
       }
-    } else if (inside && pressPressure > 0.5 && !calm){
+    } else if (inside && pressPressure > 0.5){
       // slow trickle even without deep dent
-      if (Math.random() < pressPressure * 0.015 * rateMult * dt){
+      if (Math.random() < pressPressure * 0.015 * rateMult * dt * (calm ? .5 : 1)){
         const sx = pillowCX + (Math.random() - .5) * pillowRX * 1.2;
         const sy = pillowCY + (Math.random() - .5) * pillowRY * 1.2;
-        spawnFeather(sx, sy, (Math.random() - .5) * .7, -0.5 - Math.random() * .5);
-        playFeatherWhoosh();
+        spawnFeather(sx, sy,
+          (Math.random() - .5) * (calm ? .35 : .7),
+          -(calm ? .3 : .5) - Math.random() * (calm ? .2 : .5));
+        if (!calm) playFeatherWhoosh();
       }
     }
 
@@ -952,7 +1062,7 @@ body{
   }
 
   cv.addEventListener('pointerdown', e => {
-    if (pointer.down) return;
+    if (pointer.down || keyHeld) return;
     try { cv.setPointerCapture(e.pointerId); } catch(_){}
     down(e.clientX, e.clientY, e.pointerId);
   }, { passive: true });
@@ -975,14 +1085,28 @@ body{
 
   addEventListener('blur', () => { if (pointer.down) up(); });
 
-  let keyHeld = false;
+  /*
+    Keyboard squeeze. Space/Enter only squeeze when the page (body) or the
+    canvas itself is focused. When an interactive control (a, button, input,
+    select, textarea, or any other [tabindex] element) has focus we never
+    preventDefault — native activation of that control must survive, so the
+    mute button and back link stay fully keyboard-operable. The re-entry
+    guard mirrors the pointer path so a squeeze never orphans the other.
+  */
+  function squeezeFromKey(e){
+    const t = e.target;
+    if (t === cv) return true;                              // canvas explicitly focused
+    if (t === document.body || t === document.documentElement) return true;
+    const node = t && t.closest ? t.closest('a,button,input,select,textarea,[tabindex]') : null;
+    return node === null || node === cv;                    // nothing interactive → page focus
+  }
   addEventListener('keydown', e => {
-    if (keyHeld) return;
-    if (e.key === ' ' || e.key === 'Enter'){
-      e.preventDefault();
-      keyHeld = true;
-      down(pillowCX, pillowCY, 'key');
-    }
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    if (!squeezeFromKey(e)) return;      // interactive element: let it activate, no preventDefault
+    if (keyHeld || pointer.down) return; // re-entry guard (mirrors pointerdown)
+    e.preventDefault();
+    keyHeld = true;
+    down(pillowCX, pillowCY, 'key');
   });
   addEventListener('keyup', e => {
     if (!keyHeld) return;

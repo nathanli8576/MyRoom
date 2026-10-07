@@ -35,20 +35,30 @@ body{
 }
 .back{
   position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  width:40px;height:40px;display:grid;place-items:center;border-radius:999px;
   color:var(--mute);text-decoration:none;border:1px solid var(--line);
   background:rgba(20,12,26,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s;
+  box-shadow:0 12px 26px -16px rgba(0,0,0,.95);
+  transition:color .2s cubic-bezier(.2,.7,.3,1),
+             border-color .2s cubic-bezier(.2,.7,.3,1),
+             background .2s cubic-bezier(.2,.7,.3,1),
+             transform .18s cubic-bezier(.2,.7,.3,1);
 }
 .back:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.back:active{transform:scale(.94)}
 .mute{
   position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;z-index:5;
-  width:36px;height:36px;display:grid;place-items:center;border-radius:999px;
+  width:40px;height:40px;display:grid;place-items:center;border-radius:999px;
   color:var(--mute);border:1px solid var(--line);padding:0;margin:0;cursor:pointer;
   background:rgba(20,12,26,.55);backdrop-filter:blur(8px);
-  transition:color .3s,border-color .3s,background .3s;
+  box-shadow:0 12px 26px -16px rgba(0,0,0,.95);
+  transition:color .2s cubic-bezier(.2,.7,.3,1),
+             border-color .2s cubic-bezier(.2,.7,.3,1),
+             background .2s cubic-bezier(.2,.7,.3,1),
+             transform .18s cubic-bezier(.2,.7,.3,1);
 }
 .mute:hover{color:var(--ink);border-color:rgba(var(--accent),.5);background:rgba(var(--accent),.1)}
+.mute:active{transform:scale(.94)}
 .mute svg{width:16px;height:16px}
 .mute .m{display:block}
 .mute .x{display:none}
@@ -61,7 +71,14 @@ body{
   z-index:4;color:var(--mute);
   font-size:11px;letter-spacing:.18em;text-transform:uppercase;
   font-style:italic;text-align:center;line-height:1.6;
-  pointer-events:none;padding:0 16px;
+  pointer-events:none;padding:7px 18px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:999px;
+  background:rgba(18,11,22,.5);
+  backdrop-filter:blur(8px);
+  box-shadow:
+    0 16px 32px -20px rgba(0,0,0,.95),
+    inset 0 1px 0 rgba(255,255,255,.05);
   display:flex;align-items:baseline;gap:12px;justify-content:center;
   flex-wrap:wrap;
 }
@@ -141,6 +158,10 @@ body{
   --h:320;
   --s:70%;
   position:relative;
+  appearance:none;-webkit-appearance:none;
+  display:block;margin:0;padding:0;
+  font:inherit;color:inherit;text-align:center;
+  min-width:0;
   aspect-ratio:1;
   border-radius:50%;
   cursor:pointer;
@@ -161,10 +182,10 @@ body{
     0 1px 2px rgba(0,0,0,.3);
   border:1px solid hsl(var(--h) 80% 88% / .10);
   transition:
-    transform .18s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .3s ease,
-    background .3s ease,
-    border-color .3s ease;
+    transform .15s cubic-bezier(.2,.7,.3,1),
+    box-shadow .18s ease,
+    background .18s ease,
+    border-color .18s ease;
   will-change:transform;
 }
 .bub::before{
@@ -188,27 +209,29 @@ body{
   transition:opacity .3s ease;
   pointer-events:none;
 }
-.bub:hover{
+.bub:hover,.bub:focus-visible{
   transform:scale(1.05);
+  border-color:hsl(var(--h) 80% 92% / .34);
   box-shadow:
     inset 0 -6px 14px hsl(var(--h) 55% 22% / .55),
-    inset 0 6px 12px hsl(var(--h) 90% 96% / .42),
+    inset 0 6px 12px hsl(var(--h) 90% 96% / .45),
     inset -6px 4px 10px hsl(var(--h) 70% 55% / .34),
     inset 6px -4px 10px hsl(var(--h) 70% 18% / .48),
     0 4px 12px rgba(0,0,0,.4),
-    0 0 26px hsl(var(--h) 80% 70% / .28);
+    0 0 26px hsl(var(--h) 80% 70% / .3);
 }
-.bub:active{transform:scale(.95)}
+.bub:active{transform:scale(.94)}
+.bub:disabled{cursor:default}
 
 .bub.popping{
   animation:popAnim .42s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes popAnim{
-  0%  { transform:scale(1) }
-  14% { transform:scale(1.28) translateY(-3px) }
-  42% { transform:scale(.74) }
-  70% { transform:scale(1.06) }
-  100%{ transform:scale(1) }
+  0%  { transform:scale(1);   filter:brightness(1) }
+  14% { transform:scale(1.3) translateY(-3px); filter:brightness(1.7) }
+  42% { transform:scale(.74); filter:brightness(1.25) }
+  70% { transform:scale(1.06); filter:brightness(1) }
+  100%{ transform:scale(1);   filter:brightness(1) }
 }
 
 .bub.dead{
@@ -236,7 +259,7 @@ body{
       hsl(var(--h) 80% 80% / .16) 0%,
       transparent 40%);
 }
-.bub.dead:hover{transform:scale(1);box-shadow:inherit}
+.bub.dead:hover,.bub.dead:focus-visible{transform:scale(1)}
 
 /* controls row */
 .controls{
@@ -247,29 +270,53 @@ body{
 }
 .ctrl{
   font:inherit;cursor:pointer;
-  padding:11px 24px;border-radius:999px;
-  color:#ffd7ea;font-size:14px;letter-spacing:.08em;
+  min-height:40px;padding:9px 22px;border-radius:999px;
+  color:#ffd7ea;font-size:13px;letter-spacing:.16em;text-transform:uppercase;
   border:1px solid rgba(var(--accent),.45);
   background:linear-gradient(rgba(var(--accent),.18),rgba(var(--accent),.06));
   backdrop-filter:blur(8px);
-  transition:opacity .35s ease,transform .35s ease,
-             box-shadow .3s,border-color .3s,color .3s;
+  box-shadow:0 16px 30px -18px rgba(0,0,0,.95);
+  transition:opacity .35s cubic-bezier(.2,.7,.3,1),
+             transform .35s cubic-bezier(.2,.7,.3,1),
+             visibility .35s linear,
+             box-shadow .2s cubic-bezier(.2,.7,.3,1),
+             border-color .2s cubic-bezier(.2,.7,.3,1),
+             color .2s cubic-bezier(.2,.7,.3,1);
   white-space:nowrap;
-  opacity:0;pointer-events:none;
+  opacity:0;visibility:hidden;pointer-events:none;
   transform:translateY(10px);
 }
 .ctrl.show{
-  opacity:1;pointer-events:auto;
+  opacity:1;visibility:visible;pointer-events:auto;
   transform:translateY(0);
 }
-.ctrl:hover{box-shadow:0 0 28px rgba(var(--accent),.35);border-color:rgba(var(--accent),.75)}
-.ctrl:active{transform:translateY(0) scale(.97)}
+.ctrl:hover{
+  box-shadow:0 16px 30px -18px rgba(0,0,0,.95),0 0 28px rgba(var(--accent),.35);
+  border-color:rgba(var(--accent),.75);
+}
+.ctrl:active{transform:translateY(0) scale(.94)}
 .ctrl.primary{
   color:#fff0fa;
   border-color:hsl(320 90% 75% / .65);
   background:linear-gradient(hsl(320 90% 70% / .22),hsl(320 90% 70% / .08));
 }
-.ctrl.primary:hover{box-shadow:0 0 32px hsl(320 90% 70% / .45)}
+.ctrl.primary:hover{box-shadow:0 16px 30px -18px rgba(0,0,0,.95),0 0 32px hsl(320 90% 70% / .45)}
+
+/* one consistent, visible focus ring for every focusable */
+.back:focus-visible,
+.mute:focus-visible,
+.ctrl:focus-visible,
+.bub:focus-visible{
+  outline:2px solid rgba(var(--accent),.95);
+  outline-offset:2px;
+}
+
+/* visually hidden live region — announces milestones, never every pop */
+.sr{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);
+  white-space:nowrap;border:0;
+}
 
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.01s!important;animation-duration:.01s!important}
@@ -297,9 +344,10 @@ body{
   <span><b id="hAll">0</b> all-time</span>
 </div>
 <div class="combo" id="combo" aria-hidden="true"></div>
+<div class="sr" id="say" role="status" aria-live="polite"></div>
 
 <div class="stage">
-  <div class="sheet" id="sheet" aria-hidden="true"></div>
+  <div class="sheet" id="sheet"></div>
 </div>
 
 <div class="controls">
@@ -317,11 +365,39 @@ body{
   const fx = $('#fx'), fctx = fx.getContext('2d');
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ==================== screen-reader announcements ====================
+     A polite live region for MEANINGFUL events only (new sheet, sheet
+     cleared, every 100th lifetime pop). Counters stay out of it —
+     announcing every pop would be unusable. */
+  const sayEl = $('#say');
+  let sayT = 0;
+  function say(msg){
+    // blank first so repeating the same text still gets announced
+    sayEl.textContent = '';
+    clearTimeout(sayT);
+    sayT = setTimeout(() => { sayEl.textContent = msg; }, 60);
+  }
+
   /* ==================== persistent total ==================== */
   const TOTAL_KEY = 'bubblewrap:total';
   let allTimeTotal = 0;
   try { allTimeTotal = Number(localStorage.getItem(TOTAL_KEY) || 0) || 0; } catch(e){}
-  const saveTotal = () => { try { localStorage.setItem(TOTAL_KEY, String(allTimeTotal)); } catch(e){} };
+  // Pops fire several times a second ("Pop all" especially) — writing to
+  // localStorage on each one is jank we don't need. Mark dirty, debounce,
+  // and flush for sure when the page is being hidden.
+  let saveT = 0;
+  function flushTotal(){
+    if (saveT){ clearTimeout(saveT); saveT = 0; }
+    try { localStorage.setItem(TOTAL_KEY, String(allTimeTotal)); } catch(e){}
+  }
+  function saveTotal(){
+    if (saveT) return;
+    saveT = setTimeout(flushTotal, 500);
+  }
+  addEventListener('pagehide', flushTotal);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushTotal();
+  });
   hAll.textContent = allTimeTotal;
 
   /* ==================== audio ====================
@@ -571,7 +647,7 @@ body{
   const paintMute = () => {
     muteBtn.classList.toggle('off', muted);
     muteBtn.setAttribute('aria-pressed', String(muted));
-    muteBtn.setAttribute('aria-label', muted ? 'Unmute sound' : 'Mute sound');
+    muteBtn.title = muted ? 'Unmute sound' : 'Mute sound';
   };
   muteBtn.addEventListener('click', () => {
     muted = !muted;
@@ -590,6 +666,7 @@ body{
 
   /* ==================== sheet construction ==================== */
   let COLS = 8, ROWS = 6, TOTAL = 0;
+  let builtCols = 0, builtRows = 0;   // deterministic grid target at build time
   let poppedCount = 0;
   let bubbles = [];
   let combo = 0;
@@ -601,15 +678,8 @@ body{
   const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 
-  function pickGrid(){
-    const availW = Math.min(760, innerWidth - 40);
-    const availH = innerHeight - 220;
-    const target = 70;
-    const maxCols = Math.max(4, Math.floor(availW / target));
-    const maxRows = Math.max(4, Math.floor(availH / target));
-    let cols = randInt(6, Math.min(maxCols, 10));
-    let rows = randInt(4, Math.min(maxRows, 8));
-    // keep total in a satisfying band: 24–72
+  // shared band clamping: keep the sheet in a satisfying 24–72 range
+  function bandGrid(cols, rows){
     while (cols * rows > 72){
       if (cols >= rows) cols--; else rows--;
     }
@@ -619,7 +689,33 @@ body{
     return { cols: Math.max(5, cols), rows: Math.max(4, rows) };
   }
 
-  function buildSheet(){
+  // the sizing envelope a viewport allows — jitter is applied on top
+  function gridBounds(w = innerWidth, h = innerHeight){
+    const availW = Math.min(760, w - 40);
+    const availH = h - 220;
+    const target = 70;
+    return {
+      hiCols: Math.min(Math.max(4, Math.floor(availW / target)), 10),
+      hiRows: Math.min(Math.max(4, Math.floor(availH / target)), 8)
+    };
+  }
+
+  function pickGrid(){
+    const { hiCols, hiRows } = gridBounds();
+    return bandGrid(randInt(6, hiCols), randInt(4, hiRows));
+  }
+
+  // Deterministic midpoint of the same envelope pickGrid jitters inside.
+  // Resize uses this so the rebuild decision is never a coin flip.
+  function gridFor(w, h){
+    const { hiCols, hiRows } = gridBounds(w, h);
+    return bandGrid(
+      clamp(Math.round((6 + hiCols) / 2), 6, hiCols),
+      clamp(Math.round((4 + hiRows) / 2), 4, hiRows)
+    );
+  }
+
+  function buildSheet(fixedGrid){
     gen++;
     poppingAll = false;
     combo = 0;
@@ -631,8 +727,11 @@ body{
     sheet.classList.add('rebuilding');
 
     setTimeout(() => {
-      const { cols, rows } = pickGrid();
+      // fixedGrid = zero-jitter layout (resize path); otherwise randomize
+      const { cols, rows } = fixedGrid || pickGrid();
       COLS = cols; ROWS = rows;
+      const built = gridFor(innerWidth, innerHeight);
+      builtCols = built.cols; builtRows = built.rows;
       TOTAL = COLS * ROWS;
       poppedCount = 0;
       sheet.innerHTML = '';
@@ -641,13 +740,13 @@ body{
 
       bubbles = [];
       for (let i = 0; i < TOTAL; i++){
-        const b = document.createElement('div');
+        const b = document.createElement('button');
+        b.type = 'button';
         b.className = 'bub';
         b.dataset.idx = String(i);
         b.style.setProperty('--h', randomHue().toFixed(0));
         b.style.setProperty('--s', (62 + Math.random() * 16).toFixed(0) + '%');
-        b.setAttribute('role', 'button');
-        b.setAttribute('aria-label', 'Pop');
+        b.setAttribute('aria-label', `Pop bubble ${i + 1}`);
         sheet.appendChild(b);
         bubbles.push({ el: b, popped: false });
       }
@@ -656,6 +755,7 @@ body{
       hTotal.textContent = String(TOTAL);
       updateControls();
       sheet.classList.remove('rebuilding');
+      if (gen > 1) say(`New sheet, ${TOTAL} bubbles`);
     }, 220);
   }
 
@@ -678,13 +778,18 @@ body{
     resizeFx();
     clearTimeout(resizeFx._t);
     resizeFx._t = setTimeout(() => {
-      // only rebuild if the layout fundamentally changed
-      const before = COLS * ROWS;
-      const { cols, rows } = pickGrid();
-      if (Math.abs(cols - COLS) > 1 || Math.abs(rows - ROWS) > 1){
-        buildSheet();
-      } else {
-        sheet.style.width = `min(${COLS * 78 + 36}px, ${innerWidth - 32}px)`;
+      // Deterministic target grid for the new viewport — no randInt in this
+      // path, so the rebuild decision is never a coin flip. Rebuild only when
+      // the layout actually changed: the target for this viewport moved, or
+      // the current COLS/ROWS no longer fit the viewport's sizing envelope.
+      // buildSheet(want) uses that exact grid, so later resizes stay stable.
+      const want = gridFor(innerWidth, innerHeight);
+      const { hiCols, hiRows } = gridBounds();
+      sheet.style.width = `min(${COLS * 78 + 36}px, ${innerWidth - 32}px)`;
+      const targetMoved = want.cols !== builtCols || want.rows !== builtRows;
+      const noLongerFits = COLS > Math.max(6, hiCols) || ROWS > Math.max(4, hiRows);
+      if (targetMoved || noLongerFits){
+        buildSheet(want);
       }
     }, 280);
   });
@@ -708,6 +813,7 @@ body{
         sat: 70 + Math.random() * 20
       });
     }
+    startFx();
   }
 
   function spawnRipple(cx, cy){
@@ -727,6 +833,17 @@ body{
         sat: 80
       });
     }
+    startFx();
+  }
+
+  /* The fx loop only runs while there is something to draw: spawn paths
+     call startFx(), and frameFx stops itself once the last particle is
+     gone and the canvas has been cleared. */
+  let rafId = 0;
+  function startFx(){
+    if (rafId) return;
+    frameFx._last = 0;
+    rafId = requestAnimationFrame(frameFx);
   }
 
   function frameFx(ts){
@@ -754,19 +871,22 @@ body{
         fctx.arc(p.x, p.y, rr, 0, 6.283);
         fctx.fill();
       }
-    } else if (frameFx._dirty){
-      fctx.clearRect(0, 0, W, H);
-      frameFx._dirty = false;
+      frameFx._dirty = true;
+      rafId = requestAnimationFrame(frameFx);
+    } else {
+      if (frameFx._dirty){
+        fctx.clearRect(0, 0, W, H);
+        frameFx._dirty = false;
+      }
+      rafId = 0;
     }
-    if (particles.length) frameFx._dirty = true;
-    requestAnimationFrame(frameFx);
   }
-  requestAnimationFrame(frameFx);
 
   /* ==================== pop handling ==================== */
   function popBubble(b, bx, by, opts = {}){
     if (b.popped) return;
     b.popped = true;
+    b.el.disabled = true;   // leaves the tab order; also blocks stray clicks
     poppedCount++;
 
     const now = performance.now();
@@ -801,7 +921,14 @@ body{
     hSheet.textContent = String(poppedCount);
     allTimeTotal++;
     hAll.textContent = String(allTimeTotal);
-    saveTotal();
+    if (poppedCount >= TOTAL){
+      flushTotal();                      // sheet cleared — persist immediately
+      say('Sheet cleared');
+    } else {
+      saveTotal();                       // debounced; flushed on hide
+      if (allTimeTotal % 100 === 0) say(`${allTimeTotal} pops all-time`);
+    }
+    updateControls();   // reveal "Fresh sheet" the moment the sheet is done
 
     if (!opts.bulk && combo >= 2){
       comboEl.textContent = `×${combo}`;
@@ -814,18 +941,42 @@ body{
     }
   }
 
+  function popFromEl(el){
+    const b = bubbles[Number(el.dataset.idx)];
+    if (!b || b.popped) return;
+    const r = el.getBoundingClientRect();
+    popBubble(b, r.left + r.width / 2, r.top + r.height / 2);
+  }
+
+  // Pointer: pop on pointerdown so it feels instant.
   sheet.addEventListener('pointerdown', e => {
     if (poppingAll) return;
     const el = e.target.closest('.bub');
-    if (!el) return;
-    if (el.classList.contains('dead')) return;
+    if (!el || el.disabled || el.classList.contains('dead')) return;
     e.preventDefault();
-    const b = bubbles[Number(el.dataset.idx)];
-    if (!b) return;
-    const r = el.getBoundingClientRect();
-    const bx = r.left + r.width / 2;
-    const by = r.top + r.height / 2;
-    popBubble(b, bx, by);
+    popFromEl(el);
+  });
+
+  // Keyboard: bubbles are real <button>s, so Enter/Space fire a click.
+  // A pointer tap fires this click too, but the bubble is already popped
+  // (and disabled) by the pointerdown above — popBubble's guard means the
+  // follow-up click can never double-count.
+  sheet.addEventListener('click', e => {
+    if (poppingAll) return;
+    const el = e.target.closest('.bub');
+    if (!el) return;
+    popFromEl(el);
+  });
+
+  // Explicit keyboard path (Enter/Space). The browser's native button
+  // activation also produces a click, so this can double-fire per press —
+  // popBubble's popped-guard keeps that to exactly one pop.
+  sheet.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.repeat || poppingAll) return;
+    const el = e.target.closest('.bub');
+    if (!el || el.disabled) return;
+    popFromEl(el);
   });
 
   /* ==================== pop all ==================== */
